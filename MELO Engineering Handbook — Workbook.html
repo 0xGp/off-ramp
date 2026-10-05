@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MELO Engineering Handbook — Workbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
+<style>
+:root{
+  --bg:#f6f5f2; --bg-elev:#ffffff; --border:#e3e0d8; --text:#1c1a16; --text-dim:#6b6559;
+  --accent:#7a5cff; --accent-soft:#efeaff; --mono:'JetBrains Mono',monospace;
+  --code-bg:#f1efe9; --sidebar-w:280px;
+  --status-idea:#9ca3af; --status-proposed:#d97706; --status-undecided:#dc2626;
+  --status-needs:#c026d3; --status-review:#0891b2; --status-approved:#16a34a;
+  --status-implemented:#2563eb; --status-verified:#059669; --status-deprecated:#78716c; --status-blocked:#b91c1c;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15130f; --bg-elev:#1c1a15; --border:#332f26; --text:#eae6db; --text-dim:#9b9284;
+    --accent:#a78bfa; --accent-soft:#241f36; --code-bg:#221f18;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15130f; --bg-elev:#1c1a15; --border:#332f26; --text:#eae6db; --text-dim:#9b9284;
+  --accent:#a78bfa; --accent-soft:#241f36; --code-bg:#221f18;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+*{box-sizing:border-box;}
+body{
+  margin:0; height:100%; background:var(--bg); color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,sans-serif; display:flex; min-height:100vh;
+  overflow-x:hidden;
+}
+a{color:var(--accent); text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+/* ---- Sidebar ---- */
+#sidebar{
+  width:var(--sidebar-w); min-width:var(--sidebar-w); background:var(--bg-elev); border-right:1px solid var(--border);
+  height:100vh; overflow-y:auto; position:sticky; top:0; padding:env(safe-area-inset-top,0px) 0 1rem 0;
+  transition:margin-left .25s ease; z-index:20;
+}
+#sidebar .brand{padding:1.25rem 1.25rem .75rem; border-bottom:1px solid var(--border);}
+#sidebar .brand h1{font-size:1rem; font-weight:800; margin:0 0 .15rem; letter-spacing:-.01em;}
+#sidebar .brand p{margin:0; font-size:.72rem; color:var(--text-dim); font-family:var(--mono);}
+#navsearch{width:calc(100% - 2rem); margin:.75rem 1rem 0; padding:.5rem .6rem; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:.8rem;}
+.navgroup{margin-top:.9rem;}
+.navgroup h2{font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); margin:0 1.25rem .35rem; font-weight:700;}
+.navitem{display:flex; align-items:center; gap:.45rem; padding:.4rem 1.25rem; font-size:.83rem; cursor:pointer; color:var(--text); border-left:2px solid transparent;}
+.navitem:hover{background:var(--accent-soft);}
+.navitem.active{background:var(--accent-soft); border-left-color:var(--accent); font-weight:600;}
+.navdot{width:6px; height:6px; border-radius:50%; flex-shrink:0; background:var(--status-proposed);}
+.navdot.st-idea{background:var(--status-idea);} .navdot.st-proposed{background:var(--status-proposed);}
+.navdot.st-undecided{background:var(--status-undecided);} .navdot.st-needs_validation{background:var(--status-needs);}
+.navdot.st-approved{background:var(--status-approved);} .navdot.st-verified{background:var(--status-verified);}
+
+/* ---- Main ---- */
+#mainwrap{flex:1; min-width:0; height:100vh; overflow-y:auto;}
+#topbar{
+  position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:.75rem;
+  padding:calc(env(safe-area-inset-top,0px) + .7rem) 1.5rem .7rem; background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--border);
+}
+#menuBtn{display:none; background:none; border:1px solid var(--border); border-radius:8px; width:34px; height:34px; color:var(--text); font-size:1rem; cursor:pointer;}
+#crumb{font-family:var(--mono); font-size:.78rem; color:var(--text-dim);}
+#themeBtn{margin-left:auto; background:none; border:1px solid var(--border); border-radius:8px; padding:.4rem .7rem; color:var(--text); font-size:.78rem; cursor:pointer;}
+main{max-width:840px; margin:0 auto; padding:2rem 1.75rem 6rem;}
+.statusbar{display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.25rem;}
+.badge{display:inline-flex; align-items:center; gap:.35rem; font-family:var(--mono); font-size:.68rem; font-weight:600; padding:.2rem .55rem; border-radius:999px; background:var(--code-bg); border:1px solid var(--border); color:var(--text-dim);}
+.badge .dot{width:6px;height:6px;border-radius:50%;}
+
+article h1{font-size:1.7rem; font-weight:800; letter-spacing:-.02em; margin:0 0 .3rem;}
+article h2{font-size:1.2rem; font-weight:700; margin:2rem 0 .7rem; padding-top:.5rem; border-top:1px solid var(--border);}
+article h2:first-of-type{border-top:none; padding-top:0;}
+article h3{font-size:.98rem; font-weight:700; margin:1.4rem 0 .5rem;}
+article p{line-height:1.65; color:var(--text); font-size:.93rem;}
+article p em:first-child{color:var(--text-dim);}
+article ul, article ol{line-height:1.7; font-size:.92rem; padding-left:1.3rem;}
+article li{margin-bottom:.25rem;}
+article strong{font-weight:700;}
+article code{font-family:var(--mono); background:var(--code-bg); padding:.1rem .35rem; border-radius:5px; font-size:.82em; border:1px solid var(--border);}
+article pre{background:var(--code-bg); border:1px solid var(--border); border-radius:10px; padding:1rem; overflow-x:auto; font-size:.8rem; line-height:1.55;}
+article pre code{background:none; border:none; padding:0;}
+article table{border-collapse:collapse; width:100%; margin:1rem 0; font-size:.82rem; display:block; overflow-x:auto;}
+article th, article td{border:1px solid var(--border); padding:.5rem .65rem; text-align:left; vertical-align:top;}
+article th{background:var(--code-bg); font-weight:700; font-size:.76rem; text-transform:uppercase; letter-spacing:.03em; color:var(--text-dim);}
+article tr:nth-child(even) td{background:color-mix(in srgb, var(--code-bg) 40%, transparent);}
+article blockquote{border-left:3px solid var(--accent); margin:1rem 0; padding:.2rem 1rem; color:var(--text-dim); font-style:italic;}
+article hr{border:none; border-top:1px solid var(--border); margin:1.5rem 0;}
+.pagenav{display:flex; justify-content:space-between; gap:1rem; margin-top:2.5rem; padding-top:1.25rem; border-top:1px solid var(--border);}
+.pagenav a{font-size:.82rem; border:1px solid var(--border); border-radius:10px; padding:.6rem .9rem; flex:1; color:var(--text);}
+.pagenav a:hover{border-color:var(--accent); background:var(--accent-soft); text-decoration:none;}
+.pagenav .lbl{display:block; font-size:.66rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.15rem;}
+#overlay{display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:15;}
+
+@media (max-width:860px){
+  #sidebar{position:fixed; left:0; margin-left:calc(-1 * var(--sidebar-w)); box-shadow:0 0 30px rgba(0,0,0,.2);}
+  #sidebar.open{margin-left:0;}
+  #overlay.show{display:block;}
+  #menuBtn{display:inline-flex; align-items:center; justify-content:center;}
+  main{padding:1.5rem 1.1rem 5rem;}
+}
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="brand">
+    <h1>🧭 MELO Handbook</h1>
+    <p>Documentation-first engineering workbook</p>
+  </div>
+  <input id="navsearch" placeholder="Filter sections…" oninput="filterNav(this.value)">
+  <div id="navroot"></div>
+</aside>
+
+<div id="overlay" onclick="toggleSidebar(false)"></div>
+
+<div id="mainwrap">
+  <div id="topbar">
+    <button id="menuBtn" onclick="toggleSidebar()">☰</button>
+    <span id="crumb">MELO / …</span>
+    <button id="themeBtn" onclick="toggleTheme()">◐ Theme</button>
+  </div>
+  <main>
+    <div class="statusbar" id="statusbar"></div>
+    <article id="content"></article>
+    <div class="pagenav" id="pagenav"></div>
+  </main>
+</div>
+
+<!-- ===================== CONTENT SOURCE (Markdown) ===================== -->
+<script type="text/markdown" id="src-readme">
+# MELO Engineering Handbook
+
+*Documentation-first engineering workspace for MELO, a crypto-to-fiat off-ramp protocol.*
+
+**Current scope:** V1 supports USDC → NGN with **Arc Mainnet** as the only implemented settlement chain. The application and domain model must remain chain-agnostic so Base and Ethereum can be evaluated later.
+
+## Start here
+1. Read **AGENTS.md** before making changes.
+2. Review **Project Status**.
+3. Read the **Architecture Overview**.
+4. Check the **Decision Register**.
+5. Use the **Roadmap**.
+
+## Documentation map
+| Area | Purpose |
+|---|---|
+| `AGENTS.md` | Non-negotiable engineering and AI-agent rules |
+| `START.md` | Fast orientation and first-task workflow |
+| `00-governance/` | Status vocabulary, scope, roadmap, decision register |
+| `01-architecture/` | System boundaries, layer contracts, trust model |
+| `02-domain/` | Intent lifecycle, state machine, invariants, glossary |
+| `03-integrations/` | Chain adapter, LP/provider adapter, Arc, provider due diligence |
+| `04-data/` | Data model, persistence, idempotency, event/indexing |
+| `05-api/` | API contract conventions and endpoint inventory |
+| `06-security/` | Threat model, key management, abuse cases |
+| `07-operations/` | Observability, reconciliation, incident response |
+| `08-testing/` | Test strategy and acceptance criteria |
+| `09-frontend/` | Frontend boundary and integration contract |
+| `10-deployment/` | Runtime/deployment decisions |
+| `11-research/` | Evidence-backed source pages, including LPs |
+| `adr/` | Architecture Decision Records |
+| `templates/` | Reusable docs, ADR, integration and review templates |
+| `figma/` | Diagram index and expected Figma board structure |
+
+## Status discipline
+Every material claim or decision should be tagged using the status vocabulary. A proposed design is **not** an implementation fact. A provider's marketing page is **not** proof of commercial access, corridor coverage, liquidity, or escrow compatibility.
+
+## Current Figma architecture boards
+- [01 Frontend Architecture](https://www.figma.com/board/7H6iAe7ZNGQyrq58L5JAKl)
+- [02 Backend Architecture](https://www.figma.com/board/oHjcVdZ8VyD61ndnrAWxJ9)
+- [03 Database Architecture](https://www.figma.com/board/rtN7lsSLcc5Le19SAlsqaL)
+- [04 Smart Contract Architecture](https://www.figma.com/board/VRKbAgtbpXZ4Dzul8fpYqk)
+- [05 Full System Architecture](https://www.figma.com/board/rh75hMpoqB4xR07kULknhi)
+- [06 Runtime Settlement Sequence](https://www.figma.com/board/21Ju4e3VLh0ES0ucxSoNOm)
+- [07 V1 Chain-Agnostic Architecture](https://www.figma.com/board/KG6LeQ4UjNBb9TgwgDf5g8)
+
+## Engineering principle
+> **MELO orchestrates; providers execute fiat movement; attestations provide evidence; the selected chain enforces crypto escrow and settlement rules.**
+</script>
+
+<script type="text/markdown" id="src-agents">
+# AGENTS.md — Engineering Rules
+
+*These rules apply to human contributors and AI coding agents.*
+
+## 1. Source of truth
+- Read `README.md`, `START.md`, relevant layer docs, and applicable ADRs before editing.
+- If docs conflict, do not silently choose. Record the conflict and request/raise a decision.
+- Code is **not** considered approved merely because an agent generated it.
+- Never turn `PROPOSED`, `UNDECIDED`, or `NEEDS_VALIDATION` into `VERIFIED` without evidence and an authorized review.
+
+## 2. Architecture boundaries
+- Keep domain logic chain-agnostic. Chain-specific RPC, addresses, confirmations/finality, token decimals, transaction encoding, and contract calls belong behind a **chain adapter**.
+- V1 implements Arc only. Base and Ethereum are future adapters, not runtime dependencies.
+- Provider-specific API payloads, auth, webhooks, error mappings, and retry semantics belong behind **provider adapters**.
+- The backend coordinates; it must not be treated as authoritative proof of onchain escrow or fiat movement.
+- A bank/provider is authoritative for fiat movement; Arc is authoritative for onchain escrow/settlement; the database is an application projection, not chain truth.
+- Do not claim blockchain can independently verify a bank transfer.
+
+## 3. Financial correctness
+- Use integer base units / decimal-safe arithmetic. Never use JS floating-point `number` for token or fiat amounts in core calculations.
+- Explicitly model token decimals per chain/token. Do not assume USDC always has 6 decimals — verify against current official docs and deployed token metadata before implementation.
+- All financial state transitions must be idempotent and auditable.
+- Enforce settlement/refund mutual exclusion and replay protection.
+- Never release escrow solely because a backend row says `PAYMENT_VERIFIED`; enforce the contract's attestation/authorization policy onchain.
+- Do not log secrets, private keys, full bank details, auth headers, or sensitive KYC data.
+
+## 4. Integration discipline
+- No provider is production-ready until legal/commercial access, supported corridor, chain/token compatibility, rate/quote semantics, payout lifecycle, webhook security, reconciliation, limits, and failure behavior are documented.
+- Treat quote, reservation, payout, payment evidence, attestation, and settlement as **separate concepts**.
+- Never assume a quote reserves liquidity.
+- Handle stale quotes, duplicate webhooks, out-of-order events, provider timeouts, ambiguous payout outcomes, reversals, and reconciliation mismatches.
+- External API behavior must be backed by official docs, partner confirmation, or reproducible sandbox evidence. Mark weaker evidence accordingly.
+
+## 5. Change process
+- For material architecture changes, create/update an ADR before or alongside implementation.
+- Update the relevant docs and status register in the same change as code.
+- Add tests for new state transitions, retries, idempotency, failure paths, and authorization boundaries.
+- Avoid speculative abstractions. Build the smallest interface that preserves a documented extension seam.
+- Do not introduce a new chain/provider/framework without recording rationale, trade-offs, operational cost, and rollback path.
+
+## 6. Security and review
+- Treat provider webhooks and backend messages as untrusted until authenticated and validated.
+- Validate chain ID, contract address, token address, intent ID, amount, recipient, expiry, nonce, and attestation signer where applicable.
+- Never store private keys in source control, `.env.example`, logs, or client bundles.
+- Require human review for contract changes, custody changes, attestation policy changes, or settlement invariant changes.
+
+## 7. Completion checklist
+A task is not complete until:
+- [ ] Acceptance criteria are met.
+- [ ] Tests cover success, failure, retry, and duplicate delivery where applicable.
+- [ ] Docs and status are updated.
+- [ ] Observability and reconciliation implications are addressed.
+- [ ] Security/privacy implications are reviewed.
+- [ ] No unresolved assumption is represented as fact.
+</script>
+
+<script type="text/markdown" id="src-start">
+# START.md — First 30 Minutes
+
+## Project snapshot
+MELO is a documentation-first, hybrid crypto-to-fiat off-ramp protocol. V1 target: USDC → NGN, Arc Mainnet settlement, vetted payout partners, backend orchestration, and attestation-gated escrow settlement.
+
+## Read in this order
+1. `AGENTS.md`
+2. Project Status
+3. Architecture Overview
+4. Intent Lifecycle
+5. Provider Adapter Contract
+6. Chain Adapter Contract
+7. Decision Register
+
+## Before coding
+- Identify the layer and owner of the behavior.
+- Find the corresponding contract/interface and ADR.
+- Check whether the requirement is `APPROVED` or still proposed.
+- Write acceptance criteria and failure cases.
+- Ask for clarification if the task crosses an undecided trust boundary.
+
+## First engineering milestone
+Produce a reviewed **V1 vertical slice on testnet**:
+1. Create intent and quote.
+2. Authorize and escrow USDC.
+3. Trigger a sandbox/provider payout.
+4. Verify payment evidence through the defined attestation policy.
+5. Release or refund through the escrow contract.
+6. Reconcile chain, provider, and database records.
+7. Demonstrate duplicate webhook, timeout, and ambiguous-payout handling.
+
+> Do not use production funds or claim production readiness until the security, legal/commercial, and operational gates are satisfied.
+</script>
+
+<script type="text/markdown" id="src-doc-status">
+# Document & Decision Status Vocabulary
+
+Use one status per decision, requirement, integration claim, or document section.
+
+| Status | Meaning | Allowed use |
+|---|---|---|
+| `IDEA` | Early thought; not yet shaped | Backlog/research |
+| `PROPOSED` | Concrete candidate, not approved | Design discussion |
+| `UNDECIDED` | Multiple viable options; decision owner/action needed | Decision register |
+| `NEEDS_VALIDATION` | Plausible claim requiring evidence | Provider/chain research |
+| `IN_REVIEW` | Ready for explicit technical/product review | PR/ADR review |
+| `APPROVED` | Decision accepted by named reviewer/owner | Build against it |
+| `IMPLEMENTED` | Code exists; may not be fully validated | Implementation tracking |
+| `VERIFIED` | Acceptance evidence recorded and reviewed | Tested/confirmed claim |
+| `DEPRECATED` | Superseded; retain for history | Historical record |
+| `BLOCKED` | Cannot proceed until named blocker resolved | Roadmap |
+
+`APPROVED` is a decision state; `VERIFIED` is an evidence state. A decision can be approved but not yet verified in a running implementation.
+</script>
+
+<script type="text/markdown" id="src-project-status">
+# Project Status
+
+**Overall:** `IMPLEMENTED` on testnet for the escrow contract; backend phase 1 in progress; not production-ready.
+
+## Current state (2026-09-30)
+
+| Area | Status | Where | Notes |
+|---|---|---|---|
+| Escrow contract `MeloEscrow` v0.1 | `IMPLEMENTED` (testnet) | `contracts/` | 28 tests passing; deployed to Arc Testnet and Base Sepolia (see Deployment Decisions) |
+| Frontend prototype | `IMPLEMENTED` (prototype) | `web/` | Next.js 16. Live Paycrest banks, rates and account-name check via server routes; chain picker "USDC on Arc / USDC on Base"; escrow addresses wired. Sign-in is Privy Google login with an embedded EVM wallet (RainbowKit removed); the header account menu reads `/v1/me`. Quote, deposit and tracking still run on the in-browser mock until backend phase 2 |
+| Payout partner (dev) | `PROPOSED` | LP Selection | Paycrest: production API with small real amounts after KYB; no sandbox |
+| Intake model | `PROPOSED` (chosen) | ADR-0012 | Privy account wallet with Google sign-in, saved bank account, one-tap cash-out |
+| Backend phase 1 | `IMPLEMENTED` | `backend/` (own repo) | Node 24 TypeScript, Fastify, PostgreSQL, graphile-worker. Privy token verification, users with embedded-wallet link, verified bank accounts (AES-256-GCM, fresh-login + 24 h cooldown on change), audit events, transactional alert job. Account profile (Google email and name from Privy) and onboarding status (`wallet` → `bank-account` → complete) in `/v1/me`. 24 tests pass; smoke-tested against live Paycrest |
+| Backend phases 2–6 | `PROPOSED` | ADR-0012 build plan | Next: quote + one-tap deposit (phase 2) |
+
+## Change log
+- **2026-10-01:**
+  - Frontend sign-in moved to Privy Google login with an embedded EVM wallet; RainbowKit removed (early part of backend phase 5).
+  - Account setup comes first after sign-in: wallet, then a verified payout bank account, before the app or cash-out. The cash-out details step then pays the saved account and only asks for the amount.
+- **2026-09-30:**
+  - `MeloEscrow` v0.1 built and deployed to Arc Testnet and Base Sepolia.
+  - Frontend switched to live Paycrest data and a two-chain picker.
+  - ADR-0012 chose the Privy account-wallet intake over per-intent deposit addresses.
+  - Backend phase 1 implemented: `/v1/me`, `/v1/banks`, `/v1/bank-accounts/verify`, `PUT /v1/me/bank-account`.
+- **2026-09-30:** Paycrest selected as the development payout partner (hackathon; KYB letter pending). Option C treasury float on Base; Arc USDC rebalanced to Base in batches via CCTP (domain 26 → 6), never per intent.
+
+## Scope baseline
+- V1 target: USDC → NGN bank payout.
+- Settlement chains in development: Arc Testnet and Base Sepolia. The mainnet chain set is `NEEDS_VALIDATION`; Arc mainnet status is unconfirmed.
+- Payouts are funded from the MELO treasury on Base mainnet via Paycrest (ADR-0010 Option C); escrowed USDC releases to the treasury after attestation.
+- Provider model: externally vetted/integrated partners, not an open permissionless solver market.
+- Backend handles orchestration and application state; contract enforces crypto-side settlement constraints.
+- Fiat movement is offchain and requires provider/bank evidence plus the approved attestation policy.
+
+## Not yet verified
+- LP onboarding, API credentials, commercial terms, actual NGN liquidity, and payout SLAs.
+- Each LP's compatibility with escrow-first payout sequencing.
+- Arc token address/decimals, contract deployment configuration, finality assumptions, and production RPC/indexer design.
+- Attestor governance, signer custody, quorum, revocation, and dispute policy.
+- Legal/regulatory operating model, KYC/AML obligations, and jurisdictional permissions.
+- Contract audit and operational readiness.
+
+## Gate to implementation
+Layer contracts, ADRs, provider validation, threat model, and testable invariants must be reviewed before production implementation. Testnet/sandbox prototyping can proceed with clearly marked assumptions.
+</script>
+
+<script type="text/markdown" id="src-decision-register">
+# Decision Register
+
+| ID | Topic | Status | Decision / open question | Evidence or next action |
+|---|---|---|---|---|
+| ADR-0001 | V1 canonical chain | `PROPOSED` | Arc only for V1; preserve chain-agnostic interfaces | Verify Arc docs, token metadata, testnet/mainnet deployment assumptions |
+| ADR-0002 | Provider model | `PROPOSED` | Vetted integrated providers; no permissionless solver market in V1 | Legal/commercial review and partner validation |
+| ADR-0003 | Escrow settlement | `IMPLEMENTED` (testnet) | `MeloEscrow` v0.1: user-submitted deposit of MELO-signed terms, attestation-gated `settle`, permissionless timeout `refund`, payee fixed at deposit. Deployed at `0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85` on Arc Testnet and Base Sepolia | 28 Hardhat tests pass; independent review before mainnet |
+| ADR-0004 | Quote/fill semantics | `PROPOSED` | Quote is not liquidity reservation; fill is accepted execution allocation | Provider-specific quote and reservation semantics |
+| ADR-0005 | Split fills | `UNDECIDED` | Start single-provider execution unless requirements demand splitting | Define partial-fill refund/settlement invariants |
+| ADR-0006 | Attestor trust model | `PROPOSED` (testnet) / `UNDECIDED` (mainnet) | Drafted: contract verifies attestor set + threshold; testnet threshold 1 with KMS key; mainnet ≥ threshold of MELO keys, independent quorum evaluated | Threat model review, KMS integration, rotation drill |
+| ADR-0007 | Timeout/dispute windows | `UNDECIDED` | Separate quote expiry, payout SLA, refund eligibility, dispute window | UX, provider SLA, legal review |
+| ADR-0008 | Database/event consistency | `PROPOSED` | Drafted: authority per fact; event log + projection; Postgres outbox (`SKIP LOCKED`), webhook inbox, indexer cursor, reconcilers | Postgres integration tests: duplicates, replay, worker crash, injected mismatch |
+| ADR-0009 | LP V1 selection | `PROPOSED` (development) / `UNDECIDED` (production) | Paycrest for development: keyless rates, institutions and account verification; orders need an API key after KYB | Send KYB/access request; production LP diligence continues |
+| ADR-0010 | Settlement sequencing per LP | `PROPOSED` (contract shape) / `UNDECIDED` (LP) | Drafted: contract supports A and C via deposit-time payee; B excluded from V1; testnet uses C shape with sandbox provider. | Many LPs (e.g. HoneyCoin) require crypto sent to a provider deposit address *before* payout, which conflicts with escrow-first attestation-gated release. Options: (A) only accept LPs that pay first/prefund; (B) release to provider address under a per-LP credit/exposure limit + refund address to MELO contract; (C) MELO prefunds LP float and releases escrow to MELO treasury after attestation | Ask each LP about pay-first support; model exposure and custody/licensing impact of B and C |
+| ADR-0011 | Non-Arc LP reachability | `UNDECIDED` | LPs without Arc support could be reached via CCTP (Arc domain `26`) → supported chain, at the cost of a bridge step and scope creep beyond Arc-only V1 | CCTP fee/latency/failure analysis; confirm LP Arc roadmaps first |
+| ADR-0012 | Intake model | `PROPOSED` (model chosen 2026-09-30) | Privy account wallet (Google sign-in), saved verified bank, one-tap cash-out via existing `MeloEscrow.deposit`; per-intent CREATE2 deposit address rejected for V1 | Privy Arc custom-chain test, Base sponsorship, pricing; Paycrest sender-KYC answer |
+</script>
+
+<script type="text/markdown" id="src-roadmap">
+# Documentation-First Roadmap
+
+1. **Foundation** — README, AGENTS, status model, scope, ADR process.
+2. **Domain correctness** — intent aggregate, state machine, invariants, failure matrix.
+3. **Trust/security** — trust boundaries, threat model, attestation governance, abuse cases.
+4. **Integration contracts** — provider adapter, chain adapter, webhook contract, event/indexer contract.
+5. **Data/API** — ERD, idempotency, API schemas, reconciliation model.
+6. **Evidence** — validate Arc assumptions and shortlist LPs against primary sources/partner answers.
+7. **Vertical-slice plan** — sandbox provider + Arc testnet; end-to-end acceptance tests.
+8. **Implementation** — contract and backend first; frontend consumes stable API/state contract.
+9. **Operational readiness** — monitoring, runbooks, incident response, deployment and rollback.
+10. **Production gate** — legal/commercial clearance, security review/audit, reconciliation drills, operational sign-off.
+
+## Current position (2026-09-30)
+Steps 1–6 have working drafts. Step 7 is under way on Arc Testnet and Base Sepolia with Paycrest. Step 8: the contract is done; backend phase 1 of 6 (ADR-0012 build plan) is done, and phase 2 (quote + one-tap deposit) is next.
+</script>
+
+<script type="text/markdown" id="src-arch-overview">
+# System Architecture Overview
+
+## Responsibilities
+- **Frontend** — Google sign-in via Privy, embedded account wallet and balance, saved bank account, quote review, one-tap cash-out, user-visible status/receipt (ADR-0012). Never decides settlement truth.
+- **Backend/application** — intent orchestration, quote routing, provider adapters, policy evaluation, state machine, notifications, admin operations.
+- **Database** — durable application records, idempotency, audit trail, projections. Not authoritative for chain or bank movement.
+- **Provider/fiat layer** — NGN payout execution and provider-originated payment status/evidence.
+- **Attestation layer** — validates evidence under policy and produces a cryptographic assertion; does not itself move fiat.
+- **Chain adapter** — chain-specific RPC, contract bindings, transaction submission/receipt decoding, finality and token metadata.
+- **Escrow contract** — onchain custody and release/refund constraints.
+- **Indexer/reconciler** — observes chain events and compares chain/provider state against DB projections.
+
+## Runtime outline
+1. User requests quote for an amount and NGN destination.
+2. Router gathers eligible provider quotes and normalizes them.
+3. User reviews route and signs an intent authorization.
+4. Chain adapter submits/observes escrow deposit on Arc.
+5. Backend initiates provider payout according to the agreed partner settlement model.
+6. Payment evidence is authenticated, reconciled, and attested.
+7. Escrow contract validates attestation/authorization, then releases or refunds according to rules.
+8. Indexer/reconciler updates projections; user receives a receipt.
+
+## Trust boundaries
+- User wallet signatures are untrusted input until verified.
+- Provider webhooks are untrusted until signature/authentication and replay checks pass.
+- Backend DB state is not a substitute for onchain verification.
+- Attestation signer(s) are privileged and require key-management/governance controls.
+- Chain adapter must validate chain ID, contract address, token address, and event provenance.
+</script>
+
+<script type="text/markdown" id="src-layer-contracts">
+# Layer Contracts
+
+| Layer | Owns | Must not own | Contract to adjacent layer |
+|---|---|---|---|
+| Frontend | UX, user intent, wallet interaction | Routing truth, fiat verification | Typed API client + wallet signer |
+| API/Application | Use cases, authorization, state transitions | Private keys, fabricated chain/fiat truth | Domain commands/events |
+| Domain | Intent rules, transition validation | HTTP/RPC/provider details | Pure types, policies, state machine |
+| Provider adapters | Provider API translation | MELO-wide state policy | Normalized quote/payout/status |
+| Chain adapter | Chain-specific transaction/read behavior | Provider/fiat business logic | Chain-neutral settlement port |
+| Attestation | Evidence validation/signing | Direct fiat execution | Signed typed attestation |
+| Persistence | Durable records/projections | Sole authority for external truth | Repository + inbox/outbox |
+| Indexer/reconciler | Chain observation and drift repair | Initiating fiat payouts | Idempotent events/reconciliation findings |
+</script>
+
+<script type="text/markdown" id="src-intent-lifecycle">
+# Intent Lifecycle
+
+## Suggested states
+`CREATED → ROUTING → QUOTE_AVAILABLE → USER_APPROVAL_REQUIRED → ESCROW_PENDING → ESCROWED → FIAT_PAYMENT_PENDING → PAYMENT_DETECTED → PAYMENT_VERIFYING → PAYMENT_VERIFIED → RELEASE_PENDING → SETTLED`
+
+Failure/exception states: `NO_ROUTE`, `QUOTE_EXPIRED`, `ESCROW_FAILED`, `PAYOUT_FAILED`, `PAYMENT_TIMEOUT`, `PAYMENT_VERIFICATION_FAILED`, `DISPUTED`, `REFUND_PENDING`, `REFUNDED`, `RECONCILIATION_REQUIRED`.
+
+## Modeling rules
+- Persist state transitions as append-only audit events, with a current-state projection.
+- Every transition has a command/event source, timestamp, correlation ID, and idempotency scope.
+- Distinguish intent status from provider payout status and onchain escrow status.
+- Do not mark `SETTLED` until the chain event/receipt is verified and the corresponding fill is reconciled.
+- For split fills, define per-fill state and aggregate intent state before enabling partial execution.
+- Timeout triggers must be deterministic; backend cron is a convenience, not the only refund safety mechanism.
+</script>
+
+<script type="text/markdown" id="src-invariants">
+# Protocol Invariants
+
+*Require contract/domain review.*
+
+1. Crypto cannot be released unless the configured payment-verification policy is satisfied.
+2. A refunded escrow cannot later be released.
+3. A settled fill cannot be settled again.
+4. Amount, token, chain, recipient, intent ID, nonce, and expiry are bound to the authorization/attestation.
+5. Backend database status alone cannot authorize release.
+6. Expired or invalid attestations cannot release escrow.
+7. Provider payout retries must not create duplicate fiat transfers.
+8. Every external side effect is idempotent or has an explicit ambiguity/reconciliation procedure.
+9. The protocol must define who can trigger expiry/refund and under which exact conditions.
+10. Partial fills cannot cause aggregate over-release or over-refund.
+</script>
+
+<script type="text/markdown" id="src-glossary">
+# Domain Glossary
+
+- **Intent** — User's request to exchange a specified crypto amount for fiat under stated conditions.
+- **Quote** — Time-bounded price/terms offer; not necessarily a liquidity reservation.
+- **Reservation** — Provider-confirmed temporary hold of execution capacity, if supported.
+- **Fill** — Accepted allocation/execution of some or all of an intent.
+- **Payout** — Fiat transfer instruction to the recipient.
+- **Payment evidence** — Provider/bank artifacts used to determine payout outcome.
+- **Attestation** — Signed claim that specified evidence met a defined verification policy.
+- **Escrow** — Onchain contract-held crypto governed by protocol rules.
+- **Settlement** — Final onchain release/refund for a fill.
+- **Reconciliation** — Comparing MELO records with provider/bank and chain sources of truth and resolving mismatches.
+</script>
+
+<script type="text/markdown" id="src-failure-modes">
+# Failure Modes & Recovery Matrix
+
+| Failure | Required behavior |
+|---|---|
+| No eligible quote | Return `NO_ROUTE`; do not create escrow |
+| Quote expires before authorization | Require refreshed quote |
+| Escrow tx pending/failed | Do not initiate payout until escrow verified |
+| Provider API timeout before known acceptance | Query by idempotency/reference; mark `UNKNOWN` if ambiguous |
+| Duplicate webhook | Deduplicate; no duplicate payout/state transition |
+| Payout pending beyond SLA | Keep pending/unknown, reconcile; do not infer success |
+| Payout failed/reversed | Follow approved refund/dispute policy; prevent release |
+| Attestation invalid/expired | Reject release; surface operational exception |
+| Chain RPC/indexer outage | Preserve durable intent; retry reads safely; avoid duplicate writes |
+| Backend unavailable | Contract's expiry/refund safety path remains available under approved rules |
+| Chain/provider/database disagree | Mark `RECONCILIATION_REQUIRED`; no blind manual settlement |
+</script>
+
+<script type="text/markdown" id="src-chain-adapter">
+# Chain Adapter Contract
+
+## Design goal
+Expose chain-neutral settlement operations while V1 implements Arc only. Do not leak Arc SDK/RPC details into domain services.
+
+## Illustrative port
+```ts
+type ChainId = "arc"; // Extend only after chain onboarding ADR.
+type Hex = `0x${string}`;
+
+interface ChainSettlementAdapter {
+  getEscrowState(intentId: string): Promise<EscrowState>;
+  submitDeposit(input: DepositCommand): Promise<ChainTxSubmission>;
+  submitRelease(input: ReleaseCommand): Promise<ChainTxSubmission>;
+  submitRefund(input: RefundCommand): Promise<ChainTxSubmission>;
+  getTransactionStatus(txHash: Hex): Promise<ChainTxStatus>;
+  decodeEscrowEvent(log: unknown): EscrowDomainEvent | null;
+}
+```
+*This is illustrative, not a final ABI. Finalize only after contract interface and Arc deployment details are approved.*
+
+## Required chain configuration
+- Chain ID and environment
+- RPC endpoints and failover policy
+- Escrow contract address and ABI version
+- USDC token address and decimals
+- Finality/confirmation policy
+- Explorer URL
+- Indexer cursor/reorg strategy
+- Gas/fee policy and transaction replacement behavior
+
+## Future chain onboarding gate
+A Base/Ethereum adapter requires a new ADR, chain/token/contract verification, deployment and finality assumptions, monitoring, test suite, and explicit product approval. A generic interface alone does not make a chain integration safe.
+</script>
+
+<script type="text/markdown" id="src-provider-adapter">
+# Provider Adapter Contract
+
+## Provider abstraction
+```ts
+interface LiquidityProviderAdapter {
+  getQuote(request: QuoteRequest): Promise<NormalizedQuote>;
+  checkAvailability(quoteId: string): Promise<AvailabilityResult>;
+  createPayout(request: PayoutRequest): Promise<PayoutResult>;
+  getPayoutStatus(providerOrderId: string): Promise<PayoutStatus>;
+  verifyWebhook?(request: WebhookRequest): Promise<VerifiedProviderEvent>;
+}
+```
+Methods are a starting point; adapt to partner capabilities and avoid pretending every partner supports the same lifecycle.
+
+## Normalized quote fields
+`providerId`, `providerQuoteId`, `inputAsset`, `inputAmountBaseUnits`, `fiatCurrency`, `fiatAmountMinorUnits`, `feeBreakdown`, `rate`, `limits`, `expiresAt`, `reservationSemantics`, `settlementRequirements`.
+
+## Adapter requirements
+- Map provider errors into stable MELO error categories without losing raw diagnostic context.
+- Preserve provider reference IDs and idempotency keys.
+- Verify webhook signatures, timestamp tolerance, and replay protection.
+- Model `PENDING`, `SUCCEEDED`, `FAILED`, `REVERSED`, and `UNKNOWN` distinctly where supported.
+- Do not infer success from HTTP 200 or an accepted payout request.
+- Provide reconciliation lookup and operational contact/escalation procedure.
+</script>
+
+<script type="text/markdown" id="src-attestation-contract">
+# Attestation Contract
+
+*Status: `UNDECIDED`*
+
+## Required design questions
+- What exact fact does the attestation assert: payout initiated, bank-accepted, beneficiary-credited, or irreversibly settled?
+- Which evidence is admissible, and who can inspect/verify it?
+- Single signer, threshold signatures, or independent quorum?
+- How are signer keys secured, rotated, revoked, and audited?
+- How are intent ID, fill ID, token/amount, NGN amount, recipient commitment, provider reference, expiry, and nonce bound?
+- How are reversals, disputes, conflicting evidence, and late events handled?
+- Can contract policy be updated, by whom, and under what timelock/emergency process?
+
+> Do not implement an attestation scheme until the asserted payment condition and trust model are explicit.
+</script>
+
+<script type="text/markdown" id="src-lp-selection">
+# LP Selection & Partner Due Diligence
+
+*Status: `NEEDS_VALIDATION` · Decision: No V1 LP selected.*
+
+## Evaluation dimensions
+- NGN bank payout coverage and supported beneficiary types.
+- Direct business/API onboarding and commercial availability.
+- USDC networks/token contracts supported; Arc support specifically.
+- **Escrow-first compatibility**: can payout be initiated from confirmed escrow without prior transfer into provider custody?
+- Executable quote semantics, quote expiry, reservation/availability behavior.
+- Limits, fees, net NGN, rate lock, payout SLA and operating hours.
+- Payout lifecycle statuses, reversal handling, reconciliation API, webhook authenticity.
+- Idempotency, retry safety, incident escalation, uptime/operational reporting.
+- Compliance/KYB/KYC/AML responsibilities, licensing and jurisdictional coverage.
+- Commercial terms, prefunding/collateral requirements, settlement timing.
+
+## Candidate shortlist
+| Candidate | Official site | Docs | Note |
+|---|---|---|---|
+| Partna | getpartna.com | docs.getpartna.com | Potential stablecoin/fiat ramp and NGN payout partner |
+| Yellow Card | yellowcard.io/api | docs.yellowcard.engineering | Stablecoin/fiat infra and local payout partner |
+| Daya | daya.co | daya.co/blog (dev guide) | Stablecoin/NGN payout API partner |
+| Liquidramp | liquidramp.com | liquidramp.com | Liquidity aggregation/off-ramp infra |
+| Transak | transak.com/off-ramp | docs.transak.com | Confirm headless/API product + Nigeria corridor |
+| Quidax | quidax.com | docs.quidax.io | Nigerian exchange/off-ramp route |
+| Linkio | linkio.africa | linkio.africa | Crypto-to-NGN payout route, verify operational fit |
+| Paycrest | paycrest.io | docs.paycrest.io | Onchain aggregator (Gateway escrow + provider network); NGN/KES/TZS/UGX; no Arc; no sandbox |
+| HoneyCoin | honeycoin.app | docs.honeycoin.app | Off-ramp API with NG/bank payouts; **deposit-address (provider custody) model; Arc not in chain list** |
+
+*All candidates are `NEEDS_VALIDATION`. None are integrated or commercially confirmed. See the Research section for the per-provider validation checklist and the Arc chain-validation page.*
+
+## Fit against the escrow-first model (desk research, 2026-09-30)
+*Status: `NEEDS_VALIDATION`. Source: public docs only; no partner has confirmed terms.*
+
+Under ADR-0010 Option C, the user's USDC stays in `MeloEscrow`. MELO pays NGN from a **prefunded partner balance**, the attestor signs the final provider outcome, and escrow releases to the MELO treasury. The treasury tops the partner balance back up in batches, via CCTP from Arc (domain 26) if the partner has no Arc support. So the hard requirement is a **payout-from-balance API with a unique reference**. Arc support only affects treasury top-ups. A deposit-first flow (send crypto to a provider address per transaction) does not fit.
+
+| Candidate | Payout from balance | Idempotency | Webhooks / sandbox | Arc | Fit |
+|---|---|---|---|---|---|
+| Partna | `Withdraw` from the payout balance to an NGN bank (avoid the deposit-first `/v4/ramp` offramp) | Unique `transactionReference` | Signed webhooks with `sessionId`; staging with mock deposits (access after onboarding form + call) | Not listed (ETH, Celo, Solana, Tron) | Primary candidate |
+| Yellow Card | Prefund the USD vault, then `/send` via the bank channel | Sequence ID + lookup | Signed webhooks; sandbox | No (USDC top-up on ETH, Base, Solana, Stellar, Celo) | Backup; NG requires full KYC incl. NIN + BVN, no reduced tier |
+| Daya | `POST /v1/transfers` (NGN) | `Idempotency-Key` header | `X-Daya-Signature`; sandbox | No (Tempo) | Promising; thinner public docs |
+| Liquidramp | Unclear (P2P aggregator; LPs use approve-to-spend contracts) | Unknown | No public API docs found | Announced Arc testnet | Discovery call; possible Option A fit; CBN sandbox applicant |
+| Paycrest | Per-order USDC deposit into its onchain Gateway escrow, then the provider pays NGN and the Gateway releases to the provider (refund to `refundAddress` on failure). Fits Option C with a **USDC float**: the MELO treasury funds each order, the user's USDC stays in `MeloEscrow` | `reference` field exists; uniqueness not documented (`NEEDS_VALIDATION`) | HMAC-SHA256 `X-Paycrest-Signature`, 24h retries plus replay API; **no sandbox** (production, min ~$0.50); KYB required for API key | No (live `/v2/rates/arc/...` returns "not supported"); USDC on Base, Arbitrum, Polygon, Ethereum, Celo, Solana and others; NGN supported with public rates | Strong candidate for testnet self-test and V1 |
+| HoneyCoin | No (deposit address) | — | — | No | Not V1 |
+| Transak | Consumer widget; sell flow means user pays crypto into Transak (conflicts with escrow-first) | — | Staging `api-stg.transak.com`; price/orders need partner key or access token | USDC on Arc listed (`0x3600…0000`) with `isPayInAllowed: false`, i.e. sell not supported (public API, 2026-09-30) | Not V1; NGN absent from the unauthenticated fiat list (may be partner-filtered, `NEEDS_VALIDATION`) |
+
+### Partner questions (ask all)
+1. Can MELO pay out from a prefunded balance as B2B, without an account per end user? What KYC data is required per payout?
+2. Is pay-first (Option A) supported, with the partner paid by escrow release afterwards?
+3. Which statuses are final? What is the reversal/recall window after "success"?
+4. What are the idempotency guarantees on payout create (duplicate reference behavior, safe retry after timeout)?
+5. Webhook signing scheme, retry policy, and a status-query endpoint for reconciliation?
+6. Float/collateral minimums, top-up networks, and settlement timing?
+7. Arc mainnet support or roadmap?
+
+## Development partner decision (2026-09-30)
+*Status: `DECIDED` for development; not a V1 production selection.*
+
+**Paycrest** is the development payout partner, used in its documented developer mode: production API, small real amounts (no sandbox exists). Escrow runs on Arc Testnet and Base Sepolia; Paycrest orders run on **Base mainnet**, funded from a small MELO dev treasury wallet (Option C, USDC float).
+
+- **Blocker:** Sender API key requires KYB at app.paycrest.io. Individual-developer access requested (`NEEDS_VALIDATION`).
+- **Usable without a key:** `GET /v2/rates/{network}/USDC/{amount}/NGN` (quotes), `GET /v2/institutions/NGN` (bank list; Paycrest codes such as `GTBINGLA`, not NIBSS codes), `GET /v2/currencies`, `GET /v2/tokens`.
+- **Order mapping:** `POST /v2/sender/orders` with `source {crypto, USDC, base, refundAddress = dev treasury}`, `destination {fiat, NGN, recipient {institution, accountIdentifier, accountName, memo}}`, `reference = intentId`. The treasury sends `amountToTransfer` to `receiveAddress` before `validUntil`.
+- **Outcome mapping for attestation:** `settled` → `PAYOUT_SUCCEEDED`; `refunded` → `PAYOUT_FAILED`; `expired` (treasury did not fund) → not a payout outcome, re-create or fail the intent; `deposited`/`pending`/`validated`/`settling`/`refunding` → in progress, no signature.
+- **Cost:** every test spends real USDC (`amount + senderFee + transactionFee`, min ≈ $0.50) while the escrow releases only testnet USDC. Keep the dev treasury small and capped.
+- **Until the key arrives:** develop against the `SimulatedProvider` with Paycrest-shaped webhooks and wire the keyless rates and bank-list endpoints into the app.
+
+## Self-test path (testnet, no partner onboarding)
+*Status: `PROPOSED`.*
+
+Arc Testnet USDC comes from the Circle faucet and has no value, so no partner will pay real NGN against it. For a founder self-test, keep the partner behind the provider adapter interface and swap implementations:
+
+| Stage | Provider adapter | Onboarding | What it proves |
+|---|---|---|---|
+| 1 | `SimulatedProvider`, in-repo; emits signed webhooks with a configurable outcome (success, failed, unknown, delayed) | None | Escrow → attestation → release/refund end to end, plus the failure paths |
+| 2 | Paystack or Flutterwave **test mode** transfers API | Self-serve test keys at signup (`NEEDS_VALIDATION`) | Real NGN payout API shape: recipient/transfer create, webhooks, status query, idempotent reference |
+| 3 | `ManualOperatorProvider`: the operator pays themselves from a personal bank app and records the bank reference; the attestor signs on operator confirmation | None | Real NGN leg with MELO acting as its own LP (Option C) |
+| 3b | Paycrest production with tiny amounts: the treasury wallet on Base funds each order with real USDC and the NGN lands in the operator's own bank account | KYB at app.paycrest.io | Real partner, real NGN, real webhooks, while Arc escrow runs on testnet |
+| 4 | Partna staging (then Yellow Card sandbox) | Onboarding form + call | Target partner integration |
+
+**Hackathon constraint (no registered business):** Paystack live Transfers are for Registered Businesses only; Starter (unregistered) accounts get "You cannot initiate third party payouts as a starter business". Paystack **test mode** transfers work without registration, but always return `success`, so failure and refund paths must come from `SimulatedProvider` (for example, a demo magic account number that forces `failed`). Paycrest and Partna also need KYB. Hackathon demo = Arc Testnet escrow + Paystack test-mode payouts (+ simulated failures), with an optional stage 3 manual real-naira run.
+
+The stage 3 threshold-1 manual attestation is testnet only and never carries over to mainnet (see ADR-0006). Live payout accounts on Paystack or Flutterwave require business activation, and operating Option C with real users requires legal/licensing review.
+
+## Selection rule
+Do not rank providers from marketing claims alone. Select a primary and backup only after direct diligence, sandbox evidence, technical fit review, commercial/legal review, and an approved scorecard. Provider selection does not replace ongoing liquidity/health monitoring.
+</script>
+
+<script type="text/markdown" id="src-data-model">
+# Data Model (Conceptual)
+
+**Core entities:** `User`, `Intent`, `Quote`, `Fill`, `Provider`, `Payout`, `PaymentEvidence`, `Attestation`, `Settlement`, `OnchainTransaction`, `IdempotencyRecord`, `AuditEvent`, `WebhookInbox`, `OutboxEvent`.
+
+## Modeling notes
+- Use immutable internal IDs; store external provider IDs separately with uniqueness constraints scoped by provider.
+- Store money as integer base units/minor units plus explicit asset/currency/decimals metadata.
+- Keep intent-level aggregate separate from fill-level execution records.
+- Persist raw provider payloads only when necessary, access-controlled and redacted; store normalized fields for application use.
+- Keep an append-only audit trail for privileged actions and state transitions.
+- Track chain ID, contract address, tx hash, log index, block number/hash, and confirmation/finality status.
+- Add uniqueness constraints for idempotency keys and provider webhook event IDs.
+- Define retention, encryption, access control, and PII minimization before production.
+</script>
+
+<script type="text/markdown" id="src-idempotency">
+# Idempotency & Reconciliation
+
+## Idempotency scopes
+- **Client command** — user + operation + idempotency key.
+- **Provider payout** — MELO fill ID + provider.
+- **Webhook** — provider + provider event ID.
+- **Chain event** — chain ID + tx hash + log index.
+- **Settlement command** — intent/fill ID + action + nonce.
+
+## Reconciliation loops
+- **Chain** — compare escrow contract state/events to MELO settlement projection.
+- **Provider** — query unresolved or stale payout references.
+- **Database** — detect state transitions missing corresponding external evidence.
+- **Attestation** — verify signer, payload binding, expiry, and revocation policy.
+
+> Never blindly retry an ambiguous fiat payout. Query provider status or escalate to reconciliation before retrying.
+</script>
+
+<script type="text/markdown" id="src-api-principles">
+# API Contract Principles
+
+- Publish versioned OpenAPI schemas before frontend integration.
+- Separate commands from queries; return stable domain status plus timestamps and references.
+- Use idempotency keys for side-effecting requests.
+- Return typed errors: `validation`, `quote-expired`, `no-route`, `provider-unavailable`, `payout-unknown`, `chain-pending`, `attestation-rejected`, `reconciliation-required`.
+- Never expose provider credentials, attestor secrets, internal risk signals, or unnecessary PII.
+- Treat frontend polling/websocket messages as projections; backend must derive status from verified sources.
+- Include correlation ID and request ID for support/debugging.
+</script>
+
+<script type="text/markdown" id="src-endpoint-inventory">
+# Endpoint Inventory (Draft)
+
+*Status: `IDEA` — no endpoint contract approved.*
+
+| Capability | Draft operation |
+|---|---|
+| Create intent | `POST /v1/intents` |
+| Request quotes | `POST /v1/intents/{id}/quotes` |
+| Get intent | `GET /v1/intents/{id}` |
+| Authorize intent | `POST /v1/intents/{id}/authorization` |
+| Confirm escrow observation | Internal/indexer event, not client assertion |
+| Get activity | `GET /v1/activity` |
+| Get receipt | `GET /v1/intents/{id}/receipt` |
+| Provider webhook | `POST /v1/webhooks/providers/{provider}` |
+
+Finalize authn/authz, schemas, pagination, error envelopes, rate limits, and ownership checks before implementation.
+
+The draft schema is now at **OpenAPI v0.1** (`PROPOSED`).
+</script>
+
+<script type="text/markdown" id="src-openapi">
+# OpenAPI Contract v0.1
+
+```
+Status: PROPOSED
+Date: 2026-09-30
+Related: API Contract Principles, Endpoint Inventory, ADR-0003, ADR-0008
+Source of the shapes: web/lib/api/types.ts (frontend MeloApi)
+```
+
+## Conventions
+- **Money** is integer base units carried as decimal strings (`"120000000"` = 120 USDC at 6 decimals). Decimals are always sent alongside.
+- **Errors** use one envelope: `{ "error": { "code", "message", "requestId" } }`. `code` is one of the typed errors in API Contract Principles, plus `not-found`, `unauthorized` and `conflict`.
+- **Headers:**
+  - `Idempotency-Key` is required on every side-effecting `POST`.
+  - `X-Correlation-ID` is optional; the server generates one if missing and echoes it back.
+  - `X-Request-ID` is returned on every response.
+- **Auth:** Sign-In with Ethereum (EIP-4361) creates an HTTP-only session cookie. Every intent is owned by the signed-in wallet address, and cross-owner access returns `not-found`.
+- **Status** values are backend projections; clients never assert escrow or payout state.
+
+## Flow change vs. the frontend prototype
+The prototype signs one EIP-712 message. Under ADR-0003 Option A:
+1. `POST /authorization` locks the quote and returns **MELO-signed deposit terms**.
+2. The wallet sends `approve` (if needed), then `MeloEscrow.deposit(terms, meloSignature)`.
+3. The client may send the tx hash to `/deposit-hint`. This is only an untrusted hint; the indexer confirms.
+
+The frontend's `QuoteOffer.authorization` and `AuthorizeIntentRequest` change accordingly. `CreateIntentRequest.walletAddress` is dropped: the owner and depositor come from the SIWE session.
+
+## Schema
+
+```yaml
+openapi: 3.1.0
+info:
+  title: MELO Off-Ramp API
+  version: 0.1.0-draft
+servers:
+  - url: https://api.testnet.melo.example/v1   # placeholder
+security:
+  - session: []
+
+paths:
+  /auth/nonce:
+    post:
+      summary: Issue a SIWE nonce
+      security: []
+      responses:
+        "200": { description: Nonce, content: { application/json: { schema: { $ref: "#/components/schemas/SiweNonce" } } } }
+  /auth/siwe:
+    post:
+      summary: Verify a SIWE message and start a session
+      security: []
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SiweVerifyRequest" } } }
+      responses:
+        "204": { description: Session cookie set }
+        "401": { $ref: "#/components/responses/Error" }
+  /auth/logout:
+    post:
+      summary: End the session
+      responses: { "204": { description: Logged out } }
+
+  /banks:
+    get:
+      summary: Supported NGN payout banks
+      responses:
+        "200": { description: Banks, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Bank" } } } } }
+  /recipients/resolve:
+    post:
+      summary: Resolve an account name (NUBAN lookup via provider)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/Recipient" } } }
+      responses:
+        "200": { description: Resolved, content: { application/json: { schema: { $ref: "#/components/schemas/ResolvedRecipient" } } } }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /intents:
+    post:
+      summary: Create an intent (no quote, no funds)
+      parameters: [ { $ref: "#/components/parameters/IdempotencyKey" } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/CreateIntentRequest" } } }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/CreatedIntent" } } } }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /intents/{id}/quotes:
+    post:
+      summary: Request a fresh quote (replaces any previous unlocked quote)
+      parameters: [ { $ref: "#/components/parameters/IntentId" }, { $ref: "#/components/parameters/IdempotencyKey" } ]
+      responses:
+        "200": { description: Quote, content: { application/json: { schema: { $ref: "#/components/schemas/Quote" } } } }
+        "409": { description: "no-route | provider-unavailable | conflict (already authorized)", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+
+  /intents/{id}/authorization:
+    post:
+      summary: Lock the quote and issue MELO-signed deposit terms (ADR-0003)
+      parameters: [ { $ref: "#/components/parameters/IntentId" }, { $ref: "#/components/parameters/IdempotencyKey" } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AuthorizeIntentRequest" } } }
+      responses:
+        "200": { description: Deposit instructions, content: { application/json: { schema: { $ref: "#/components/schemas/DepositInstructions" } } } }
+        "409": { description: "quote-expired | conflict", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+
+  /intents/{id}/deposit-hint:
+    post:
+      summary: Untrusted hint that a deposit tx was sent; speeds up indexing only
+      parameters: [ { $ref: "#/components/parameters/IntentId" } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [txHash], properties: { txHash: { $ref: "#/components/schemas/Hex32" } } } } }
+      responses: { "202": { description: Accepted for indexing } }
+
+  /intents/{id}:
+    get:
+      summary: Intent projection (poll every ~2s until terminal)
+      parameters: [ { $ref: "#/components/parameters/IntentId" } ]
+      responses:
+        "200": { description: Intent, content: { application/json: { schema: { $ref: "#/components/schemas/IntentView" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /intents/{id}/receipt:
+    get:
+      summary: Receipt, only when status is SETTLED
+      parameters: [ { $ref: "#/components/parameters/IntentId" } ]
+      responses:
+        "200": { description: Receipt, content: { application/json: { schema: { $ref: "#/components/schemas/IntentView" } } } }
+        "409": { description: Not settled, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+
+  /activity:
+    get:
+      summary: Caller's intents, newest first
+      parameters:
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        "200":
+          description: Page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/IntentView" } }
+                  nextCursor: { type: [string, "null"] }
+
+  /webhooks/providers/{provider}:
+    post:
+      summary: Provider webhook (signature-verified, inbox-deduplicated; ADR-0008)
+      security: []
+      parameters: [ { name: provider, in: path, required: true, schema: { type: string } } ]
+      responses:
+        "200": { description: Stored (or duplicate) }
+        "401": { description: Bad signature or timestamp }
+
+components:
+  securitySchemes:
+    session: { type: apiKey, in: cookie, name: melo_session }
+  parameters:
+    IntentId: { name: id, in: path, required: true, schema: { type: string, pattern: "^int_[A-Za-z0-9]+$" } }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, maxLength: 128 } }
+  responses:
+    Error: { description: Typed error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+  schemas:
+    BaseUnits: { type: string, pattern: "^[0-9]+$" }
+    Address: { type: string, pattern: "^0x[0-9a-fA-F]{40}$" }
+    Hex32: { type: string, pattern: "^0x[0-9a-fA-F]{64}$" }
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+              enum: [validation, quote-expired, no-route, provider-unavailable, payout-unknown, chain-pending,
+                     attestation-rejected, reconciliation-required, not-found, unauthorized, conflict]
+            message: { type: string }
+            requestId: { type: string }
+    SiweNonce: { type: object, required: [nonce], properties: { nonce: { type: string } } }
+    SiweVerifyRequest: { type: object, required: [message, signature], properties: { message: { type: string }, signature: { type: string } } }
+    Bank: { type: object, required: [code, name], properties: { code: { type: string }, name: { type: string } } }
+    Recipient:
+      type: object
+      required: [bankCode, accountNumber]
+      properties: { bankCode: { type: string }, accountNumber: { type: string, pattern: "^[0-9]{10}$" } }
+    ResolvedRecipient: { type: object, required: [accountName], properties: { accountName: { type: string } } }
+    CreateIntentRequest:
+      type: object
+      required: [inputAsset, inputAmount, chainId, fiatCurrency, recipient]
+      properties:
+        inputAsset: { const: USDC }
+        inputAmount: { $ref: "#/components/schemas/BaseUnits" }
+        chainId: { type: integer }
+        fiatCurrency: { const: NGN }
+        recipient: { $ref: "#/components/schemas/Recipient" }
+    CreatedIntent:
+      type: object
+      required: [intentId, status]
+      properties: { intentId: { type: string }, status: { $ref: "#/components/schemas/IntentStatus" } }
+    Quote:
+      type: object
+      required: [quoteId, inputAmount, inputDecimals, inputAsset, fiatCurrency, fiatDecimals, grossFiat,
+                 providerFee, meloFee, netFiat, rateDisplay, issuedAt, expiresAt, reservation]
+      properties:
+        quoteId: { type: string }
+        inputAmount: { $ref: "#/components/schemas/BaseUnits" }
+        inputDecimals: { type: integer }
+        inputAsset: { const: USDC }
+        fiatCurrency: { const: NGN }
+        fiatDecimals: { type: integer }
+        grossFiat: { $ref: "#/components/schemas/BaseUnits" }
+        providerFee: { $ref: "#/components/schemas/BaseUnits" }
+        meloFee: { $ref: "#/components/schemas/BaseUnits" }
+        netFiat: { $ref: "#/components/schemas/BaseUnits" }
+        rateDisplay: { type: string }
+        issuedAt: { type: integer, description: epoch ms }
+        expiresAt: { type: integer, description: epoch ms }
+        reservation: { enum: [INDICATIVE, RESERVED] }
+    AuthorizeIntentRequest:
+      type: object
+      required: [quoteId]
+      properties: { quoteId: { type: string } }
+    DepositInstructions:
+      type: object
+      required: [escrowContract, chainId, token, terms, meloSignature, depositDeadline]
+      properties:
+        escrowContract: { $ref: "#/components/schemas/Address" }
+        chainId: { type: integer }
+        token: { $ref: "#/components/schemas/Address" }
+        terms:
+          type: object
+          description: MeloEscrow.DepositTerms (ADR-0003); uints as decimal strings
+          required: [intentId, depositor, token, amount, payee, recipientCommitment, quoteExpiry, refundAfter, nonce]
+          properties:
+            intentId: { $ref: "#/components/schemas/Hex32", description: "keccak256 of the API intent id" }
+            depositor: { $ref: "#/components/schemas/Address" }
+            token: { $ref: "#/components/schemas/Address" }
+            amount: { $ref: "#/components/schemas/BaseUnits" }
+            payee: { $ref: "#/components/schemas/Address" }
+            recipientCommitment: { $ref: "#/components/schemas/Hex32" }
+            quoteExpiry: { $ref: "#/components/schemas/BaseUnits" }
+            refundAfter: { $ref: "#/components/schemas/BaseUnits" }
+            nonce: { $ref: "#/components/schemas/BaseUnits" }
+        meloSignature: { type: string }
+        depositDeadline: { type: integer, description: "epoch ms (terms.quoteExpiry is the same instant in epoch seconds)" }
+    IntentStatus:
+      enum: [CREATED, QUOTE_AVAILABLE, USER_APPROVAL_REQUIRED, ESCROW_PENDING, ESCROWED, FIAT_PAYMENT_PENDING,
+             PAYMENT_VERIFYING, PAYMENT_VERIFIED, RELEASE_PENDING, SETTLED, QUOTE_EXPIRED, PAYOUT_FAILED,
+             REFUND_PENDING, REFUNDED, RECONCILIATION_REQUIRED]
+    IntentView:
+      type: object
+      required: [id, authorizedAt, quote, recipient, escrowContract, correlationId, projection]
+      properties:
+        id: { type: string }
+        authorizedAt: { type: integer }
+        quote: { $ref: "#/components/schemas/Quote" }
+        recipient:
+          type: object
+          required: [bankCode, bankName, accountLast4, accountName]
+          properties: { bankCode: { type: string }, bankName: { type: string }, accountLast4: { type: string }, accountName: { type: string } }
+        escrowTxHash: { oneOf: [ { $ref: "#/components/schemas/Hex32" }, { type: "null" } ] }
+        escrowContract: { $ref: "#/components/schemas/Address" }
+        providerReference: { type: [string, "null"] }
+        correlationId: { type: string }
+        projection:
+          type: object
+          required: [status, payoutStatus, confirmations]
+          properties:
+            status: { $ref: "#/components/schemas/IntentStatus" }
+            payoutStatus: { enum: [NOT_STARTED, PENDING, SUCCEEDED, FAILED, REVERSED, UNKNOWN] }
+            confirmations: { type: integer }
+```
+
+## Still open
+- Rate limits per endpoint and per wallet.
+- Whether `/recipients/resolve` needs abuse controls beyond auth (account enumeration).
+- Websocket/SSE as an alternative to polling (projection only).
+- KYC/KYB fields, which depend on the LP and legal review.
+</script>
+
+<script type="text/markdown" id="src-threat-model">
+# Threat Model
+
+## Assets
+Escrowed USDC, payout funds, user authorization, attestor keys, provider credentials, personal/bank data, protocol state, admin access.
+
+## Threat actors / failure sources
+Malicious user, compromised provider account, forged/replayed webhook, compromised backend, malicious/compromised attestor, admin misuse, RPC/indexer inconsistency, chain congestion/reorg, provider outage or ambiguous payout.
+
+## Key mitigations to design
+- Contract-enforced amount/token/recipient/intent/expiry/nonce binding and replay protection.
+- Attestor key custody, rotation, threshold/quorum policy, revocation, and auditability.
+- Provider webhook signature verification, replay windows, inbox deduplication.
+- Least-privilege provider/admin credentials and secrets manager.
+- Contract pause/emergency policy with documented authority and recovery.
+- Independent reconciliation across provider and chain sources.
+- Rate limits, abuse monitoring, sanctions/KYC policy review, PII minimization.
+- Explicit refund/dispute path and tests for every terminal-state race.
+
+## Open questions
+Attestor trust model, emergency authority, dispute adjudication, provider prefunding model, contract upgradeability, and legal/compliance allocation remain undecided.
+</script>
+
+<script type="text/markdown" id="src-observability">
+# Observability & Operations
+
+## Correlation keys
+`intentId`, `fillId`, `providerOrderId`, `providerEventId`, `chainId`, `txHash`, `attestationId`, `correlationId`.
+
+## Metrics
+- Quote success/latency by provider
+- Quote-to-payout conversion
+- Payout success/failure/unknown/reversal rates
+- Time in each intent state
+- Attestation rejection/latency
+- Escrow pending duration and settlement/refund outcomes
+- Provider API/webhook health
+- Chain RPC/indexer lag and reconciliation mismatch count
+
+## Alerts
+Stuck escrow, payout outcome unknown beyond threshold, duplicate payout attempts, attestation signer failures, provider webhook silence, indexer lag, settlement/refund mismatch, elevated provider failures.
+
+> Never log secrets or full bank details. Define severity thresholds and on-call ownership before production.
+</script>
+
+<script type="text/markdown" id="src-recon-runbook">
+# Reconciliation Runbook (Template)
+
+1. Identify affected intent/fill and freeze unsafe automatic retries.
+2. Gather chain state, tx receipts/logs, provider payout status, payment evidence, attestation record, and audit events.
+3. Determine authoritative source for each disputed fact.
+4. Classify: delayed, duplicate, failed, reversed, mismatched, or unknown.
+5. Do not manually mark settled/refunded without the required external evidence and approved authority.
+6. Apply an idempotent repair command or escalate to dispute/incident process.
+7. Record root cause, impact, corrective action, and prevention test.
+</script>
+
+<script type="text/markdown" id="src-test-strategy">
+# Test Strategy
+
+- **Unit** — domain transitions, amount math, quote normalization, policy checks.
+- **Property/invariant** — no double release/refund, no amount overrun, invalid/expired attestation rejected.
+- **Contract** — fuzzing, invariant tests, access-control tests, replay tests, timeout/refund races.
+- **Adapter contract tests** — provider sandbox fixtures, signature verification, error mapping, idempotency.
+- **Integration** — Postgres transactions, inbox/outbox, indexer replay, reconciliation.
+- **End-to-end** — quote → authorization → escrow → payout → attestation → settlement/refund.
+- **Chaos/failure** — duplicate/out-of-order webhook, provider timeout, RPC outage, delayed chain event, ambiguous payout, backend restart.
+- **Security** — dependency, secret scanning, static analysis, independent contract review/audit before production.
+</script>
+
+<script type="text/markdown" id="src-acceptance-criteria">
+# V1 Acceptance Criteria (Draft)
+
+- User can obtain an executable, time-bounded quote with explicit net NGN and fees.
+- User explicitly authorizes the intent and exact parameters.
+- Escrow deposit is independently verified on the configured chain.
+- Provider payout is initiated exactly once or enters an explicit unknown/reconciliation state.
+- Payment verification follows an approved evidence and attestation policy.
+- Contract rejects invalid, expired, mismatched, or replayed settlement authorization.
+- Refund and release are mutually exclusive and race-tested.
+- User/admin status is derived from reconciled backend projections.
+- Duplicate events and retries do not duplicate payout or settlement.
+- Runbook can reconcile a deliberately injected ambiguous payout.
+</script>
+
+<script type="text/markdown" id="src-frontend-boundary">
+# Frontend Boundary
+
+Frontend is a consumer of MELO's API and wallet/chain adapter. It must not encode provider-specific behavior or treat optimistic UI as settlement truth.
+
+## User flow (ADR-0012)
+- **First time:** sign in with Google (Privy) → account wallet created → save bank account after the name check → "Add USDC" shows her address and QR for Arc or Base.
+- **Each cash-out:** choose "USDC on Arc / USDC on Base" → amount → quote (net NGN, fees, expiry) → one tap: the embedded wallet deposits into `MeloEscrow` → payout processing → verification → settlement/receipt.
+- No external wallet connection, network switching or signing pop-ups.
+
+## Current prototype (`web/`)
+- Live Paycrest data via server routes `/api/paycrest/{institutions,rate,verify-account}`; the API key never reaches the browser.
+- Two-chain picker with the USDC logo; escrow addresses in `lib/chains.ts`.
+- Sign-in: Privy Google login (direct redirect, no method picker) creates the embedded EVM wallet; wagmi runs through `@privy-io/wagmi`, and the wallet follows the selected chain without a prompt. The app creates the wallet itself if Privy's `createOnLogin` didn't.
+- Account setup (`/account/setup`): every page except the landing page redirects there until `/v1/me` reports onboarding complete (wallet, then a payout bank account verified by name). The same page changes the payout account later (fresh sign-in, 24 h cooldown).
+- Cash-out details with a saved account: amount only, plus a "Pays to" card; the full account number never reaches the browser.
+- The account menu shows the Google email, the wallet address and the saved payout bank from the backend's `/v1/me`, sent with the Privy access token.
+- Still mock: quote, deposit and tracking (backend phases 2–4). `web/.npmrc` relaxes npm peer resolution because Privy lists optional peers that conflict with wagmi's; viem is pinned to 2.56.0 to match `@privy-io/wagmi`.
+
+## UI requirements
+- Clearly distinguish quote, authorization, escrowed, payout pending, payment verified, settled, failed, refunded, and needs-attention.
+- Display chain/network and token explicitly.
+- Explain what the user signs and what escrow does.
+- Avoid implying fiat payment is verified until backend evidence/attestation policy confirms it.
+- Provide stable activity/receipt references and support path.
+- Responsive minimal fintech UI; avoid exposing unnecessary LP complexity.
+</script>
+
+<script type="text/markdown" id="src-deployment">
+# Deployment & Runtime Decisions
+
+*Status: testnet contracts deployed; backend topology `PROPOSED`; production `UNDECIDED`.*
+
+## Testnet deployments (2026-09-30)
+
+| Chain | Chain ID | `MeloEscrow` | USDC | Deploy block |
+|---|---|---|---|---|
+| Arc Testnet | 5042002 | [`0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85`](https://explorer.testnet.arc.io/address/0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85) | `0x3600000000000000000000000000000000000000` | 64794401 |
+| Base Sepolia | 84532 | [`0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85`](https://sepolia.basescan.org/address/0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85) | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | 47506703 |
+
+- The address is the same on both chains because it was the deployer's first transaction on each.
+- Owner, quote signer and single attestor (threshold 1) are the testnet deployer `0x10Ede187d03D651fc68f62a2d6501F67A6e93a86`. Rotate them via `setQuoteSigner`, `setAttestor` and `transferOwnership` before any real value.
+- Source of truth: `contracts/deployments/<chainId>.json`, exported to `contracts/exports/addresses.ts`.
+
+## Backend topology (PROPOSED)
+- **Modular monolith, two processes from one codebase:** `api` (Fastify HTTP) and `worker` (jobs on Postgres via graphile-worker). They split only when scaling or isolation requires it.
+- **PostgreSQL** is the only stateful dependency (no Redis). Migrations are versioned SQL, and money columns are `numeric`/integer minor units only.
+- **Secrets:** Privy app secret, Paycrest keys, data-encryption key and signer keys come from the environment locally and a secret manager/KMS in deployed environments; never committed.
+- **Environments:** local (Docker Postgres), testnet (Arc Testnet + Base Sepolia, Paycrest production with small amounts), production `UNDECIDED`.
+
+## Required decisions
+- Monolith modular backend vs separately deployed services
+- PostgreSQL hosting, backups, PITR, encryption, migration strategy
+- Queue/outbox/inbox technology and delivery guarantees
+- Secret manager/KMS/HSM and attestor key custody
+- RPC provider redundancy and indexer deployment
+- Worker scheduling, retries, dead-letter handling
+- Environments: local, CI, testnet/sandbox, staging, production
+- Infrastructure-as-code, deployment approvals, rollback and incident access
+
+> Avoid premature microservices. Split deployables only when scaling, isolation, team ownership, or reliability requirements justify the operational cost.
+</script>
+
+<script type="text/markdown" id="src-research-method">
+# Research & Evidence Method
+
+*Status: `APPROVED` as documentation convention*
+
+For every external provider/chain claim, record:
+- Claim and why it matters to MELO
+- Source URL, source owner, page/API version, access date
+- Evidence class: official public docs, partner confirmation, sandbox observation, third-party report, or unverified
+- Exact supported market/network/asset/endpoint and limitations
+- What remains unknown
+- Reviewer and next validation action
+
+> A public marketing page does not prove production API access, NGN liquidity, Arc support, pricing, payout SLA, or compatibility with MELO's escrow-first sequencing. Revalidate before implementation and periodically after launch.
+</script>
+
+<script type="text/markdown" id="src-arc-validation">
+# Arc — Chain Validation Page
+
+*Status: `NEEDS_VALIDATION` before implementation.*
+
+## V1 role
+Arc is the sole planned V1 settlement chain behind the chain adapter. MELO domain logic should not directly depend on Arc-specific SDK types.
+
+## Verify from current official Arc documentation
+- Mainnet chain ID, RPC and explorer
+- USDC contract address and token decimals on Arc
+- Gas token behavior and transaction fee estimation
+- Finality/confirmation guarantees and reorg assumptions
+- Contract deployment/verification process
+- Event/indexing options and rate limits
+- Wallet compatibility and signing behavior
+- Testnet/mainnet differences and supported tooling
+
+## Source
+Arc docs: `docs.arc.io`
+
+See also: **Arc On/Off-Ramp Integration** (research page summarising Arc's official ramp integration guide).
+
+> Do not copy token addresses, decimals, or chain parameters from secondary articles or memory into production config. Capture source/version/date and verify against chain data.
+</script>
+
+<script type="text/markdown" id="src-arc-onoff-ramp">
+# Arc — On/Off-Ramp Integration
+
+*Status: `NEEDS_VALIDATION` · Evidence class: official public docs · Accessed: 2026-09-29*
+
+**Source:** [On/off-ramp integration — Arc Docs](https://docs.arc.io/integrate/on-off-ramps.md) · Follow-up guide: [Add Arc to your on/off-ramp platform](https://docs.arc.io/integrate/on-off-ramps/add-arc-to-your-platform)
+
+## Summary
+On/off-ramp platforms on Arc use USDC for both transfers and gas — no ETH float is required. Arc's sub-second finality removes the multi-confirmation wait required on other EVM chains.
+
+## Key differences for ramp platforms
+| Concern | Arc behavior | Impact on MELO |
+|---|---|---|
+| **USDC as native gas token** | Gas is paid in USDC; no separate ETH/gas token | Single USDC asset entry per address. No ETH float for gas; users don't need a second token |
+| **Deterministic finality** | Transactions finalize in under one second; no reorgs | Complete sell orders after 1 confirmation. Remove block-countdown / multi-confirmation logic from the chain adapter's finality policy |
+| **Two decimal views, one balance** | Native USDC uses **18 decimals** (`eth_getBalance`, EIP-7708 events); ERC-20 interface uses **6 decimals** (`balanceOf`). Both draw from the same balance | Filter Transfer events on the native system emitter (`0xffff…fffe`) and divide the 18-decimal `value` by 10^12 for display. Use 6-decimal values for withdrawals |
+
+## Testnet parameters (from docs)
+| Requirement | Value |
+|---|---|
+| RPC | `https://rpc.testnet.arc.io` |
+| Chain ID | `5042002` (testnet) |
+| USDC ERC-20 contract | `0x3600000000000000000000000000000000000000` |
+| CCTP domain | `26` (crosschain USDC routing) |
+
+*These are **testnet** values only. Mainnet chain ID, RPC, and USDC address remain unverified — see Arc Validation.*
+
+## Behaviors that affect ramp operations
+- **Blocklist enforcement** — Transactions from/to blocklisted addresses are rejected before the mempool. Transfers involving a blocked address revert at runtime and still consume gas. **Screen destination addresses before broadcasting.**
+- **EIP-7708 Transfer events** — Every native USDC movement emits an ERC-20 `Transfer` event from system emitter `0xffff…fffe`. Filtering only on the ERC-20 contract address misses native sends.
+
+## Implications for MELO design
+- **Chain adapter** — Model decimals per interface (18 native vs 6 ERC-20), not per token. Amount conversion must use integer base units; never floating-point.
+- **Indexer/reconciler** — Subscribe to both the USDC ERC-20 contract and the native system emitter, or deduplicate if both emit for the same movement.
+- **Finality policy** — 1-confirmation finality simplifies `ESCROW_PENDING → ESCROWED`, but still verify the receipt/event before transitioning.
+- **Gas/fee policy** — Relayer/attestor wallets need a USDC balance for gas; no separate native-token treasury.
+- **Compliance** — Add pre-broadcast blocklist screening for refund/release recipients so a blocked address doesn't cause a reverted, gas-consuming settlement.
+- **Crosschain** — CCTP domain `26` is relevant if Base/Ethereum adapters are onboarded later (future scope, requires ADR).
+
+## Remaining unknowns
+- Mainnet parameters (chain ID, RPC, USDC address, CCTP domain).
+- Whether escrow contracts receiving USDC via the ERC-20 interface vs native send need separate handling.
+- Blocklist source/API for pre-broadcast screening.
+- RPC rate limits and indexing options for production.
+
+> Revalidate against current Arc docs and on-chain data before copying any value into config.
+</script>
+
+<script type="text/markdown" id="src-honeycoin">
+# HoneyCoin — Off-Ramp API (Candidate LP)
+
+*Status: `NEEDS_VALIDATION` · Evidence class: official public API reference · Accessed: 2026-09-29*
+
+**Source:** [HoneyCoin API — Off-Ramp](https://docs.honeycoin.app/reference/crypto-off-ramp) (API v1.0.4, page updated 2026-05-28)
+
+## What the API does
+`POST https://crypto.honeycoin.app/api/minting/offramp` — "send tokens to an escrow address and get the value back in a number of different FIAT currencies." Auth is an API key in the `Authorization` header.
+
+## Request (summary)
+| Field | Required | Notes for MELO |
+|---|---|---|
+| `senderAmount` | yes | **`number` (double)**. Adapter must convert from integer base units and round deterministically; never feed floats back into core math |
+| `senderCurrency` | yes | `USDC` / `USDT` |
+| `receiverCurrency` | yes | Fiat, e.g. `NGN` |
+| `chain` | yes | Enum: `eth`, `arb`, `base`, `matic`, `bsc`, `optimism`, `solana`, `tron`, `tempo`. **Arc is not listed** |
+| `country` | yes | ISO-2, e.g. `NG` |
+| `destination` | yes | Bank Account, MoMo, Paybill, Till |
+| `payoutMethod` | yes | `accountName`, `accountNumber`, `code` (bank code, required for banks) |
+| `externalReference` | yes | Our reconciliation ID. Map to MELO `fillId`, and check whether HoneyCoin rejects duplicates (idempotency) |
+| `refundAddress` | no | Where funds go back if the payout fails; defaults to the sender. Must be on the same chain |
+| `email` | no | Customer email; PII-minimise |
+
+## Response (summary)
+`transactionId`, `addressId`, `address` (per-order deposit address), `expiresAt` (ms epoch).
+
+## Settlement model: provider deposit address
+HoneyCoin gives you a **per-order deposit address**. The crypto goes into **HoneyCoin's custody first**, and the fiat payout follows. If the payout fails, the funds are returned to `refundAddress`.
+
+This conflicts with MELO's **escrow-first, attestation-gated release** model (ADR-0003):
+- Releasing escrow to `address` *before* payout evidence means the contract no longer guarantees "no release without verified payment".
+- Waiting for payout evidence before releasing is impossible, because HoneyCoin pays out only after it receives the crypto.
+
+See **ADR-0010** in the Decision Register for the options.
+
+## Architectural implications
+- **Provider adapter** — Add a `settlementRequirements` value such as `PROVIDER_DEPOSIT_ADDRESS { address, expiresAt, refundAddress }`, separate from `ESCROW_FIRST`.
+- **Chain adapter** — Arc is unsupported. Using HoneyCoin in V1 would require an Arc → supported-chain route (e.g. CCTP to Base), which breaks the "Arc-only V1" scope. Needs an ADR.
+- **Refund path** — Set `refundAddress` to a MELO-controlled escrow/refund contract, not the user's EOA, so refunds are reconciled against the intent.
+- **Expiry** — `expiresAt` bounds the deposit window. Tie it to quote expiry and don't release escrow after it.
+- **Status** — This endpoint doesn't document status lookup or webhooks. Find the payout-status and webhook endpoints in the rest of the API reference.
+
+## Open questions for HoneyCoin
+- Is Arc support planned? Timeline?
+- Is `externalReference` enforced as unique (idempotent create)?
+- What happens to a late deposit after `expiresAt`, or to a partial or over-deposit?
+- What are the payout status lifecycle, webhook signing and replay protection?
+- Is the NGN bank corridor live, and what are its limits, fees, rate lock and SLA?
+- Does HoneyCoin support pay-first/prefunded payout (fiat before crypto), which would keep MELO's escrow model?
+- What are the KYB and licensing requirements for Nigeria?
+</script>
+
+<script type="text/markdown" id="src-circle-ramps">
+# Circle — USDC Fiat On/Off-Ramp Infrastructure
+
+*Status: `NEEDS_VALIDATION` · Evidence class: vendor blog (marketing) · Accessed: 2026-09-29*
+
+**Source:** [How USDC Provides New Fiat On & Off-Ramp Opportunities for Crypto Startups — Circle Blog](https://www.circle.com/blog/how-usdc-provides-new-fiat-on-off-ramp-opportunities-for-crypto-startups-1) (published 2021-08-25, updated 2024-10-01)
+
+> This is a 2021 marketing article. Its product names (Circle Account, Payments, Payouts, Digital Accounts) have since moved to the **Circle Payments Network (CPN)**, Mint, Wallets, CCTP, Gateway and Paymaster. Treat it as background only; verify against current Circle docs.
+
+## Relevant claims
+- Circle Account moves value between USDC onchain and USD in bank accounts.
+- Payouts can be made in USDC or over traditional banking rails, and can be automated.
+- Digital Accounts support sub-accounts, fund routing and "escrow-like options".
+- Circle is a US-regulated MSB and a licensed money transmitter.
+
+## Relevance to MELO
+| Circle product (current) | Possible MELO role | Note |
+|---|---|---|
+| **Arc** | V1 settlement chain | Circle-built; USDC is the native gas token (see Arc On/Off-Ramp Integration) |
+| **CCTP** | Arc ↔ Base/Ethereum routing | Could connect Arc escrow to LPs that don't support Arc (e.g. HoneyCoin). Future scope, needs ADR |
+| **CPN Fiat Payments** | Possible fiat payout rail | **NGN coverage unverified.** The article is USD-centric |
+| **Mint** | USDC ↔ USD treasury for MELO or LP prefunding | Only if MELO holds treasury; custody/licensing implications |
+| **Paymaster / Gateway** | Gas abstraction, unified balance | Less relevant on Arc, where gas is already USDC |
+| **Wallets** | Embedded user or operator wallets | Custody model decision required |
+
+## Architectural implications
+- Circle is a **chain + rails** vendor, not a Nigeria NGN payout LP. Keep it in the chain/infra column, not the LP shortlist, until CPN NGN coverage is confirmed.
+- If CCTP is used to reach non-Arc LPs, the chain adapter needs a **bridge step** with its own states: burn → attestation → mint. It must be idempotent and reconciled like any other side effect.
+
+## Open questions
+- Does CPN support NGN payouts, and who is the local licensed partner?
+- What are CCTP fees, latency and failure/recovery on Arc (domain `26`)?
+- What are the onboarding requirements for a Nigeria-focused business?
+</script>
+
+<script type="text/markdown" id="src-lp-validation-template">
+# LP Validation Checklist (per candidate)
+
+*Status: `NEEDS_VALIDATION` — applies to every candidate in the LP shortlist.*
+
+Each candidate is a research entry point only. No integration or commercial access is confirmed for any of them.
+
+## Required validation (per provider)
+- [ ] Direct business/API onboarding available to MELO
+- [ ] Nigeria/NGN bank payout corridor supported for this customer/use case
+- [ ] USDC supported on the intended network; Arc Mainnet explicitly confirmed or documented
+- [ ] Quote fields, expiry, executable-vs-indicative semantics, reservation behavior
+- [ ] Limits, fees, net NGN, FX/rate-lock behavior
+- [ ] Payout creation, idempotency, status lookup, webhook signature and replay controls
+- [ ] Failure, reversal, ambiguous outcome, reconciliation and escalation process
+- [ ] Escrow-first flow compatibility (no unapproved assumption of provider custody)
+- [ ] KYB/KYC/AML, licensing, compliance responsibilities and geographic restrictions
+- [ ] Commercial terms, prefunding, settlement timing, SLA and operational support
+- [ ] Sandbox or controlled test evidence captured and reviewed
+
+## Evidence log format
+| Date | Claim | Evidence/source | Confidence | Reviewer | Status |
+|---|---|---|---|---|---|
+| TBD | Shortlist candidate only | Public starting points | Low | TBD | `NEEDS_VALIDATION` |
+
+> Do not select as primary/backup until diligence is complete and the LP scorecard is reviewed. Record unresolved gaps and rejected assumptions explicitly.
+</script>
+
+<script type="text/markdown" id="src-adr-process">
+# Architecture Decision Records — Process
+
+Use `ADR-XXXX-short-title.md`. ADRs record decisions, not general documentation.
+
+## Lifecycle
+`PROPOSED → IN_REVIEW → ACCEPTED | REJECTED | SUPERSEDED`
+
+An accepted ADR may still require implementation and verification. Link affected docs, code, tests, and evidence. Do not rewrite history; supersede with a new ADR.
+</script>
+
+<script type="text/markdown" id="src-adr-0003">
+# ADR-0003: Escrow Settlement Contract
+
+```
+Status: PROPOSED
+Date: 2026-09-30
+Decision owner: TBD
+Reviewers: TBD (contract reviewer required)
+Related: Protocol Invariants, Attestation Contract, ADR-0006, ADR-0007, ADR-0010, Chain Adapter Contract
+```
+
+## Context
+MELO's core promise is escrow-first: user USDC is held by a contract, and only released once the fiat payout is verified, or refunded otherwise. The contract is the only component allowed to move escrowed funds, so it must enforce invariants 1–6 and 9 on its own. The backend database must never be able to release funds by itself (invariant 5).
+
+## Decision drivers
+- Release requires a verified attestation; refund and release are mutually exclusive.
+- Funds must stay recoverable if the MELO backend disappears (Failure Modes: *Backend unavailable*).
+- No bank PII onchain.
+- Smallest possible trusted surface; testable with Hardhat fuzz/invariant tests.
+- Must not depend on token features we have not verified on Arc.
+
+## Options considered
+### Option A — User-submitted deposit with MELO-signed terms
+User approves USDC, then calls `deposit(terms, meloSig)`. `terms` are issued by the backend after quote lock and signed by a MELO *quote signer* key. The contract verifies the signature, expiry and `msg.sender == terms.depositor`, then pulls USDC with `transferFrom`.
+- Benefits: user's own transaction is the authorization; uses only the standard ERC-20 interface; terms are bound onchain.
+- Costs: two wallet transactions (approve + deposit) unless an allowance already exists.
+
+### Option B — Relayed single-signature deposit (EIP-3009 / EIP-2612)
+User signs one authorization; a MELO relayer submits `receiveWithAuthorization` or `permit` + deposit and pays gas.
+- Benefits: one signature, closest to the current frontend prototype.
+- Costs: depends on Arc USDC supporting EIP-3009/EIP-2612 — `NEEDS_VALIDATION`. Adds a relayer to operate and fund.
+
+### Option C — Backend-controlled deposit address
+Rejected: puts user funds in MELO custody before verification and contradicts escrow-first.
+
+## Decision (proposed)
+Adopt **Option A** for the testnet vertical slice. Keep Option B as a follow-up once Arc USDC authorization support is verified from official docs and chain data.
+
+One non-upgradeable contract, `MeloEscrow`, holding per-intent records:
+
+```solidity
+struct DepositTerms {
+  bytes32 intentId;
+  address depositor;
+  address token;               // Arc USDC via ERC-20 interface
+  uint256 amount;              // base units (6 decimals via ERC-20 interface — verify)
+  address payee;               // release destination, fixed at deposit (ADR-0010)
+  bytes32 recipientCommitment; // hash(bankCode, account, salt); no PII onchain
+  uint64  quoteExpiry;         // deposit must land before this
+  uint64  refundAfter;         // permissionless refund from here (ADR-0007)
+  uint256 nonce;
+}
+
+struct Attestation {
+  bytes32 intentId;
+  uint8   outcome;             // 1 = PAYOUT_SUCCEEDED -> release, 2 = PAYOUT_FAILED -> refund
+  bytes32 evidenceHash;        // hash of provider reference + normalized evidence
+  uint64  expiry;
+  uint256 nonce;
+}
+
+function deposit(DepositTerms calldata t, bytes calldata meloSig) external;
+function settle(Attestation calldata a, bytes[] calldata attestorSigs) external;
+function refund(bytes32 intentId) external; // anyone, once block.timestamp >= refundAfter
+
+event Deposited(bytes32 indexed intentId, address indexed depositor, uint256 amount);
+event Released(bytes32 indexed intentId, address indexed payee, uint256 amount, bytes32 evidenceHash);
+event Refunded(bytes32 indexed intentId, address indexed depositor, uint256 amount, uint8 reason);
+```
+
+*Illustrative — the final ABI is fixed only after review.*
+
+Rules the contract enforces:
+- State per intent: `NONE → ESCROWED → RELEASED | REFUNDED`. Terminal states are final.
+- `payee` is fixed at deposit, so a compromised attestor can only release to the pre-agreed payee, never to an arbitrary address.
+- `settle` verifies EIP-712 signatures (domain includes chain ID and contract address) against the attestor set and threshold from ADR-0006, and rejects expired or replayed attestations.
+- `refund` after `refundAfter` needs no MELO involvement and cannot be blocked by pause.
+- Pause blocks new deposits and `settle`, never timeout refunds.
+- The contract uses only the ERC-20 interface of USDC. Native-USDC gas balance is never treated as escrow funds.
+- No upgrade proxy for V1: changes ship as a new deployment, with the old contract left to drain.
+
+## Consequences
+- **Frontend:** the authorize step becomes "lock quote → approve → deposit" (two transactions) instead of a single typed-data signature. The status page reads escrow state from the backend projection fed by the indexer, never from the client's own transaction receipt.
+- **Backend:** needs a quote-signer key (separate from attestor keys) and must issue terms only for a live, locked quote.
+- **Risk:** a timeout refund after a payout that actually succeeded means MELO loses the fiat. `refundAfter` must exceed the provider's final-status SLA plus a reconciliation buffer (ADR-0007).
+- **Operations:** every intent ends in exactly one onchain terminal event, which gives reconciliation an unambiguous anchor.
+
+## Validation plan
+- Hardhat unit, fuzz and invariant tests: no double release/refund; release XOR refund; wrong signer, expired or replayed attestation rejected; refund works while paused.
+- Race tests: `settle` versus `refund` at the `refundAfter` boundary.
+- Verify from official Arc docs: USDC ERC-20 address and decimals, finality, and gas behaviour.
+- Independent contract review before any non-testnet deployment.
+
+## Revisit triggers
+Arc USDC supports EIP-3009 or EIP-2612 (enables Option B); split fills are required (ADR-0005); the chosen LP needs a different release sequence (ADR-0010).
+
+## Implementation notes (`contracts/` v0.1, 2026-09-30)
+*Status: `PROPOSED`, testnet only, not independently reviewed.*
+- Targets: Arc Testnet (5042002) and Base Sepolia (84532). One bytecode, `evmVersion: cancun`, Solidity 0.8.34, OpenZeppelin 5.6.
+- `nonce` fields dropped from `DepositTerms` and `Attestation`: each `intentId` can be used once per deployment, and the EIP-712 domain binds chain ID and contract address, which together prevent replay.
+- `refundAfter` is bounded onchain to 30 min–24 h after deposit; the backend default is 2 h.
+- Per-token deposit cap (`tokenMaxAmount`, 0 = not accepted) and `totalEscrowed` accounting; the owner can sweep only the surplus above `totalEscrowed`.
+- `settle` stays valid after `refundAfter` while the intent is escrowed: the first of `settle`/`refund` wins, which reduces MELO's loss when a payout succeeded late.
+- Attestor signatures must be distinct and sorted by signer address ascending.
+- A USDC-blocklisted depositor or payee makes the transfer revert; funds stay escrowed (accepted behaviour, needs ops runbook).
+- Arc specifics applied: ERC-20 interface only (6 decimals), no payable or `SELFDESTRUCT`, deploy script enforces `maxFeePerGas` ≥ 20 gwei.
+- Arc mainnet status is `NEEDS_VALIDATION`: the docs index says "Testnet only" while the connect page lists mainnet chain 5042.
+- 28 Hardhat tests pass: signature binding, cross-deployment replay, window bounds, balance-delta, pause, settle/refund race, blocklist, admin, randomized accounting invariants.
+</script>
+
+<script type="text/markdown" id="src-adr-0006">
+# ADR-0006: Attestor Trust Model
+
+```
+Status: PROPOSED (testnet); mainnet model UNDECIDED
+Date: 2026-09-30
+Decision owner: TBD
+Reviewers: TBD (security reviewer required)
+Related: Attestation Contract, ADR-0003, ADR-0007, Threat Model
+```
+
+## Context
+`MeloEscrow.settle` moves funds on the strength of attestor signatures. Whoever controls attestor keys controls escrow outcomes, bounded by the deposit-time `payee`. The handbook's Attestation Contract page lists the questions that must be answered first.
+
+## What the attestation asserts
+An attestation asserts exactly one of two facts about one intent:
+1. **PAYOUT_SUCCEEDED** — the provider reported a *final* success status for the MELO payout reference, for at least the quoted `minNetFiat`, to the committed recipient.
+2. **PAYOUT_FAILED** — the provider reported a *final* failure or reversal, and no duplicate payout exists for the intent.
+
+It does **not** assert that the beneficiary's bank credited the funds; we have no bank-level evidence source today. `UNKNOWN`, pending or conflicting evidence produces **no attestation**. The intent goes to `RECONCILIATION_REQUIRED` and waits for resolution or the timeout refund.
+
+## Options considered
+- **A — Single signer key.** Simple, but a single point of compromise.
+- **B — Threshold of MELO-operated keys (e.g. 2-of-3).** Resists one key leaking, but not a compromised MELO.
+- **C — Independent quorum** (MELO plus an independent verifier or the LP). Strongest, but needs partners and governance.
+
+## Decision (proposed)
+- The contract verifies an **attestor set with a threshold** from day one, so moving from A to B or C is a configuration change, not a redeploy.
+- **Testnet:** threshold 1, one attestor key held in a cloud KMS (signing through the KMS API; the key never leaves it). Never in `.env` files or the repo.
+- **Mainnet gate:** at least Option B, with Option C evaluated during LP diligence. Mainnet stays `UNDECIDED` until the threat model review.
+- **Governance:** the attestor set and threshold are changed by an admin multisig. Adding an attestor or lowering the threshold goes through a timelock; removing a compromised attestor takes effect immediately.
+- **Binding:** attestations are EIP-712 typed data over `intentId`, `outcome`, `evidenceHash`, `expiry` and `nonce`, with a domain bound to chain ID and escrow address.
+- **Evidence retention:** the attestor service stores the normalized evidence behind each `evidenceHash`, redacted and access-controlled, for audit and disputes.
+
+## Consequences
+- The attestor is a separate service with minimal permissions. It reads verified payout records and signs; it cannot trigger payouts.
+- Every signing request, signature and rejection lands in the audit log with correlation IDs.
+- Alert on signing failures, on unusual volume, and on attestations issued without a matching provider final status.
+
+## Validation plan
+Contract tests for set, threshold and rotation (including immediate removal); KMS signing integration test; a drill that rotates the testnet key end to end.
+
+## Revisit triggers
+The LP offers signed payout receipts (enables Option C evidence); regulatory guidance on who may attest; any key-custody incident.
+</script>
+
+<script type="text/markdown" id="src-adr-0008">
+# ADR-0008: Database & Event Consistency
+
+```
+Status: PROPOSED
+Date: 2026-09-30
+Decision owner: TBD
+Reviewers: TBD
+Related: Data Model, Idempotency & Reconciliation, Failure Modes Matrix, Deployment Decisions
+```
+
+## Context
+Three systems hold facts about a cash-out: the chain (escrow state), the provider (payout state) and MELO's Postgres (decisions and projections). None can be updated atomically with the others. We need at-least-once processing, no duplicate side effects, and a way to repair drift.
+
+## Decision (proposed)
+**Authority per fact.** The chain is authoritative for escrow state, and the provider for payout state. Postgres is authoritative only for MELO's own decisions (quotes issued, commands accepted). UI status is a projection derived from those sources.
+
+**Intent aggregate.** An append-only `intent_events` table plus an `intents` projection, both written in the same transaction. Optimistic concurrency uses a `version` column, and every transition goes through the domain state machine.
+
+**Transactional outbox.** Side effects (provider payout request, attestation request, notifications) are written as `outbox` rows in the same transaction as the state change. Workers claim rows with `FOR UPDATE SKIP LOCKED` and deliver at least once, so consumers must be idempotent. Failures back off, then go to a dead-letter status with alerting.
+
+**Webhook inbox.**
+- Verify the signature and timestamp window.
+- Insert into `webhook_inbox` with `UNIQUE (provider, provider_event_id)`, then return 2xx.
+- Process asynchronously; a duplicate insert is a no-op.
+
+**Chain indexer.**
+- Keep a cursor per `(chain_id, contract)`, and store events with `UNIQUE (chain_id, tx_hash, log_index)`.
+- Only process blocks the finality policy considers final (Arc finality is `NEEDS_VALIDATION`).
+- Replaying from any cursor is safe because of the uniqueness constraint.
+
+**Client idempotency.** `idempotency_records (user_id, key)` stores a request hash and response snapshot. The same key with a different body returns `validation`, and records expire after 24h.
+
+**Queue technology.** Postgres only (outbox plus `SKIP LOCKED`) for V1: no Redis or Kafka until measured load requires it.
+
+**Reconcilers.** Scheduled jobs compare:
+- escrow events with intent projections;
+- stale payouts with provider status lookups;
+- attestations with evidence.
+
+A mismatch moves the intent to `RECONCILIATION_REQUIRED` and alerts; there is never a silent auto-fix.
+
+## Consequences
+- One database to operate, back up (PITR) and reason about; simpler local and CI setup.
+- Outbox latency is seconds, not milliseconds, which is acceptable for this flow.
+- Every worker must be idempotent and restart-safe; this is tested by killing workers mid-batch.
+
+## Validation plan
+Integration tests against real Postgres covering duplicate webhooks, out-of-order webhooks, indexer replay from genesis, a worker crash between claim and ack, and an injected mismatch that the reconciler must catch.
+
+## Revisit triggers
+Sustained outbox lag, multi-region requirements, or event fan-out to many consumers.
+</script>
+
+<script type="text/markdown" id="src-adr-0010">
+# ADR-0010: Settlement Sequencing per LP
+
+```
+Status: PROPOSED (contract shape); LP choice UNDECIDED
+Date: 2026-09-30
+Decision owner: TBD
+Reviewers: TBD (legal/commercial review required)
+Related: ADR-0003, ADR-0009, LP Selection, HoneyCoin research
+```
+
+## Context
+Escrow-first release (ADR-0003) means crypto leaves escrow only *after* the payout is verified. Many LPs, HoneyCoin included, want crypto at their deposit address *before* paying out. Something has to give: sequencing, custody, or credit exposure.
+
+## Options considered
+- **A — Pay-first LP.** The LP pays naira from its own float; escrow releases to the LP's address after attestation. Cleanest fit, but depends on LP willingness and pricing.
+- **B — Release-before-payout under a credit limit.** Escrow releases to the LP first, with a per-LP exposure cap. This contradicts attestation-gated release and needs a different contract.
+- **C — MELO-prefunded float.** MELO keeps a float with the LP and pays out from it; escrow releases to a MELO treasury address after attestation. Works with deposit-first LPs, but MELO carries float and custody obligations.
+
+## Decision (proposed)
+- `MeloEscrow` supports **A and C** through the deposit-time `payee` field (LP settlement address, or MELO treasury).
+- **B is excluded** from the V1 contract, because it breaks invariant 1.
+- **Testnet vertical slice:** a sandbox provider with `payee` = a MELO testnet treasury address (the C shape), since sandbox payouts involve no real float.
+- **Commercial choice between A and C:** deferred to ADR-0009 LP diligence. Each LP is asked directly whether it supports pay-first.
+
+## Consequences
+- Option C likely makes MELO a party that receives user crypto and pays fiat, which may have licensing and custody implications. Legal review is required before mainnet.
+- Treasury float needs its own monitoring (balance, top-up alerts) and reconciliation against LP statements.
+- A per-LP `payee` allowlist on the backend stops terms from being issued with an arbitrary payee.
+
+## Validation plan
+LP answers on pay-first support and float terms; legal opinion on Option C; a treasury reconciliation drill on testnet.
+
+## Revisit triggers
+The LP offers pay-first with acceptable pricing (prefer A); legal advice rules out C; the LP requires B-style sequencing (needs a new ADR and contract design).
+</script>
+
+<script type="text/markdown" id="src-adr-0012">
+# ADR-0012: Account Wallets for Intake (Privy)
+
+```
+Status: PROPOSED (model chosen by product owner 2026-09-30; vendor details NEEDS_VALIDATION)
+Date: 2026-09-30
+Decision owner: Product owner
+Reviewers: TBD (security review of signer policies before mainnet)
+Related: ADR-0003, ADR-0006, ADR-0007, ADR-0008, ADR-0010, Frontend Boundary
+```
+
+## Context
+The v0.1 flow requires connecting an external wallet, switching network and signing on every cash-out. The target user often holds USDC on an exchange and cashes out repeatedly. The priority is **least human time per cash-out** and a clean, fintech-like UX.
+
+## Options considered
+- **A · Per-intent CREATE2 deposit address, no login.** Each cash-out gets a precomputed contract address that can only flush into `MeloEscrow` or refund. It is correct and needs no account, but every cash-out repeats amount, bank, refund address, copy and send (about 2–3 min). It also needs deposit windows, amount-tolerance rules, late-deposit handling, a refund-address field, a relayer and a contract v0.2. **Rejected for V1**; kept as a possible future "guest checkout".
+- **B · Privy account wallet (chosen).** The user signs in with Google. Privy creates a non-custodial embedded wallet, which becomes her **permanent USDC address**. She saves a verified bank account once, funds the address any time, and cashes out from her balance with one tap.
+- **C · Shared escrow address with exact-amount matching.** Rejected: amount collisions, exchange fees, unattributable resends, and plain transfers bypass `MeloEscrow.deposit`.
+
+## Decision (product owner, 2026-09-30)
+1. **Sign-in:** Google only in V1, via Privy.
+2. **Wallet:** a Privy embedded EVM wallet per user, with the same address on Arc and Base. Arc is configured as a custom chain (`defineChain`). Privy documents support for any EVM chain via `supportedChains` (docs.privy.io, accessed 2026-09-30).
+3. **Bank account:** saved on the profile after a Paycrest name check. It can be changed, with a fresh re-authentication, an email alert and a 24 h cooling-off period before a new account receives payouts (PROPOSED).
+4. **Cash-out:** one tap from the balance. The embedded wallet calls the **existing** `MeloEscrow.deposit` with MELO-signed terms, so there is no contract change and the current Arc Testnet and Base Sepolia deployments remain valid. Settlement and refund are unchanged (ADR-0003). A refund returns USDC to the user's own wallet.
+5. **Auto cash-out on arrival:** deferred. When built, it is opt-in and uses a Privy server-held signer whose policy allows only `MeloEscrow` calls, on our chain IDs, up to the user's limit. Privy documents per-signer policies restricting contracts, calldata, chains and amounts.
+
+## Why B is fastest and simplest
+- **Human time:** about 1 min the first time (Google, save bank, fund); after that, a tap. Option A costs 2–3 min every time.
+- **No refund-address field.** A refund goes to her own wallet.
+- **No deposit window, tolerance rules or late deposits.** She cashes out from a balance that is already there, so the amount is exact.
+- **No FX-lock risk while waiting for a transfer.** The quote is taken when the funds are already in hand.
+- **No contract v0.2 and no relayer for intake.**
+- **Identity per user** makes limits and Paycrest's sender questions tractable.
+
+## Gas
+- **Arc:** gas is paid in USDC from the user's own balance, so no sponsorship is needed. Show a "network fee ~$0.0x" line on the quote.
+- **Base:** gas is ETH. Use Privy gas sponsorship; Base is on Privy's supported list. Sponsorship for custom chains may require contacting Privy, which is irrelevant for Arc.
+
+## Risks and mitigations
+- **Account takeover redirecting payouts:** re-authenticate, alert and cool off on bank changes; per-user daily limits; a new device needs a Google re-login.
+- **Vendor dependency:** Privy pricing, limits and uptime are NEEDS_VALIDATION. Users can export keys, so funds are never locked in.
+- **Deposit on the wrong network:** the same address exists on every EVM chain. Funds sent on an unsupported chain are recoverable by the user through key export. Show a clear "Arc or Base only" note.
+- **Compliance:** sanctions screening of incoming transfer senders; limits per user and per bank account.
+
+## Architecture impact
+- **Frontend:** RainbowKit and wagmi wallet-connect are replaced by the Privy provider.
+  - Screens: sign-in; home (balance per chain, "Add USDC" with QR/address, "Cash out"); bank setup; quote with one-tap confirm; tracker.
+  - The chain picker remains ("USDC on Arc" / "USDC on Base").
+- **Backend (TypeScript, Postgres, separate repo):**
+  - Privy token verification and a `users` table keyed by Privy user ID and wallet address;
+  - quotes and the quote signer; intents;
+  - a deposit watcher (USDC `Transfer` logs to user wallets, for the balance and activity feed, and `MeloEscrow.Deposited` for intents);
+  - a Paycrest payout worker (Base treasury, ADR-0010 Option C), a webhook inbox, an attestor `settle` job, and a reconciler.
+- **Contracts:** none for V1 intake.
+
+## Build plan
+
+| Phase | Scope | Done when |
+|---|---|---|
+| 1 · Backend skeleton | Repo, Postgres migrations, job runner on Postgres; Privy auth verification; `users`, `bank_accounts`, `quotes`, `intents` | Signed-in user can save a verified bank account via the API |
+| 2 · Quote + deposit | Paycrest rate quote; MELO-signed `DepositTerms`; frontend one-tap deposit from the Privy wallet | USDC locked in `MeloEscrow` on both testnets from the app |
+| 3 · Watcher | Indexer for `Deposited` / `Released` / `Refunded` plus USDC transfers to user wallets; cursors; confirmations | Intent moves to ESCROWED automatically; balance feed accurate |
+| 4 · Payout + settle | Paycrest adapter (simulator until KYB), webhook inbox (HMAC), attestor `settle` / refund | Settled releases to treasury; failure refunds the user |
+| 5 · Frontend | Privy sign-in (Google), home balance, Add USDC, bank setup, cash-out, tracker; remove RainbowKit | Full flow on both testnets with no external wallet |
+| 6 · Operations | Limits, bank-change cooling-off, sanctions screening, reconciler, metrics | Injected mismatch detected; limits enforced |
+
+## Validation plan
+- Privy: Arc custom chain works for the embedded wallet; confirm Base Sepolia sponsorship; confirm pricing tier and server-signer policies.
+- Paycrest: sender-KYC requirements during KYB.
+
+## Revisit triggers
+One-time users dominate (build Option A as guest checkout); Privy pricing or limits unacceptable; Privy cannot support Arc embedded wallets; legal advice on auto cash-out.
+</script>
+
+<script type="text/markdown" id="src-tpl-adr">
+# Template — ADR
+
+```
+ADR-XXXX: Title
+Status: PROPOSED
+Date: YYYY-MM-DD
+Decision owner: TBD
+Reviewers: TBD
+Related: links to docs/issues/ADRs
+
+## Context
+What problem and constraints require a decision?
+
+## Decision drivers
+...
+
+## Options considered
+### Option A
+Benefits, costs, risks.
+### Option B
+Benefits, costs, risks.
+
+## Decision
+What is chosen, and what is explicitly not chosen?
+
+## Consequences
+Positive, negative, operational, security, and migration consequences.
+
+## Validation plan
+Evidence/tests/partner confirmations required.
+
+## Revisit triggers
+What new evidence would cause this decision to be revisited?
+```
+</script>
+
+<script type="text/markdown" id="src-tpl-integration">
+# Template — Integration Validation
+
+```
+Integration Validation — Provider/Chain
+Status: NEEDS_VALIDATION
+Owner: TBD
+Last checked: YYYY-MM-DD
+Official docs/version: URL
+
+## Claims
+| Claim | Evidence | Confidence | Remaining gap |
+|---|---|---|---|
+
+## Sandbox evidence
+Steps, request/response IDs (redacted), observed behavior, test date.
+
+## Security and failure cases
+Auth/signatures, replay, idempotency, timeouts, reversals, reconciliation.
+
+## Decision
+APPROVED / BLOCKED / REJECTED with rationale and reviewer.
+```
+</script>
+
+<script type="text/markdown" id="src-tpl-layer">
+# Template — Layer Specification
+
+```
+Layer Specification — Name
+Status: PROPOSED
+Owner: TBD
+Related ADRs: TBD
+
+- Responsibility
+- Non-responsibilities
+- Inputs / outputs
+- Public interfaces
+- State and persistence
+- Failure modes
+- Security / trust assumptions
+- Observability
+- Testing and acceptance criteria
+- Open questions
+```
+</script>
+
+<script type="text/markdown" id="src-figma">
+# Figma Architecture Index
+
+The current architecture boards are separate FigJam files. Use them as visual navigation, **not** as the only specification. Every diagram must link to a maintained Markdown spec/ADR.
+
+## Current boards
+- [01 Frontend Architecture](https://www.figma.com/board/7H6iAe7ZNGQyrq58L5JAKl)
+- [02 Backend Architecture](https://www.figma.com/board/oHjcVdZ8VyD61ndnrAWxJ9)
+- [03 Database Architecture](https://www.figma.com/board/rtN7lsSLcc5Le19SAlsqaL)
+- [04 Smart Contract Architecture](https://www.figma.com/board/VRKbAgtbpXZ4Dzul8fpYqk)
+- [05 Full System Architecture](https://www.figma.com/board/rh75hMpoqB4xR07kULknhi)
+- [06 Runtime Settlement Sequence](https://www.figma.com/board/21Ju4e3VLh0ES0ucxSoNOm)
+- [07 V1 Chain-Agnostic Architecture](https://www.figma.com/board/KG6LeQ4UjNBb9TgwgDf5g8)
+
+## Recommended next boards
+- 08 Trust Boundaries & Threat Model
+- 09 Intent State Machine & Failure Transitions
+- 10 Provider Quote → Fill → Payout Sequence
+- 11 Attestation Verification & Escrow Release
+- 12 Eventing, Indexing & Reconciliation
+- 13 Deployment & Runtime Topology
+- 14 Security Controls / Admin Authority
+
+For each board: include purpose, status, owner, last-reviewed date, assumptions, and links to relevant docs/ADRs. Mark future Base/Ethereum adapters as future scope.
+</script>
+
+<!-- ===================== APP LOGIC ===================== -->
+<script>
+const NAV = [
+  {title:"Overview", items:[
+    {id:"readme", label:"README", status:"proposed"},
+    {id:"agents", label:"AGENTS.md — Rules", status:"approved"},
+    {id:"start", label:"START.md — Onboarding", status:"approved"},
+  ]},
+  {title:"00 · Governance", items:[
+    {id:"doc-status", label:"Status Vocabulary", status:"approved"},
+    {id:"project-status", label:"Project Status", status:"implemented"},
+    {id:"decision-register", label:"Decision Register", status:"undecided"},
+    {id:"roadmap", label:"Roadmap", status:"proposed"},
+  ]},
+  {title:"01 · Architecture", items:[
+    {id:"arch-overview", label:"System Overview", status:"proposed"},
+    {id:"layer-contracts", label:"Layer Contracts", status:"proposed"},
+  ]},
+  {title:"02 · Domain", items:[
+    {id:"intent-lifecycle", label:"Intent Lifecycle", status:"proposed"},
+    {id:"invariants", label:"Protocol Invariants", status:"proposed"},
+    {id:"glossary", label:"Glossary", status:"approved"},
+    {id:"failure-modes", label:"Failure Modes Matrix", status:"proposed"},
+  ]},
+  {title:"03 · Integrations", items:[
+    {id:"chain-adapter", label:"Chain Adapter Contract", status:"proposed"},
+    {id:"provider-adapter", label:"Provider Adapter Contract", status:"proposed"},
+    {id:"attestation-contract", label:"Attestation Contract", status:"undecided"},
+    {id:"lp-selection", label:"LP Selection & Diligence", status:"needs_validation"},
+  ]},
+  {title:"04 · Data", items:[
+    {id:"data-model", label:"Data Model", status:"proposed"},
+    {id:"idempotency", label:"Idempotency & Reconciliation", status:"proposed"},
+  ]},
+  {title:"05 · API", items:[
+    {id:"api-principles", label:"API Contract Principles", status:"proposed"},
+    {id:"endpoint-inventory", label:"Endpoint Inventory", status:"idea"},
+    {id:"openapi", label:"OpenAPI Contract v0.1", status:"proposed"},
+  ]},
+  {title:"06 · Security", items:[
+    {id:"threat-model", label:"Threat Model", status:"proposed"},
+  ]},
+  {title:"07 · Operations", items:[
+    {id:"observability", label:"Observability", status:"proposed"},
+    {id:"recon-runbook", label:"Reconciliation Runbook", status:"proposed"},
+  ]},
+  {title:"08 · Testing", items:[
+    {id:"test-strategy", label:"Test Strategy", status:"proposed"},
+    {id:"acceptance-criteria", label:"V1 Acceptance Criteria", status:"proposed"},
+  ]},
+  {title:"09 · Frontend", items:[
+    {id:"frontend-boundary", label:"Frontend Boundary", status:"proposed"},
+  ]},
+  {title:"10 · Deployment", items:[
+    {id:"deployment", label:"Deployment Decisions", status:"proposed"},
+  ]},
+  {title:"11 · Research", items:[
+    {id:"research-method", label:"Research & Evidence Method", status:"approved"},
+    {id:"arc-validation", label:"Arc Validation", status:"needs_validation"},
+    {id:"arc-onoff-ramp", label:"Arc On/Off-Ramp Integration", status:"needs_validation"},
+    {id:"circle-ramps", label:"Circle — USDC Ramp Infra", status:"needs_validation"},
+    {id:"honeycoin", label:"HoneyCoin — Off-Ramp API", status:"needs_validation"},
+    {id:"lp-validation-template", label:"LP Validation Checklist", status:"needs_validation"},
+  ]},
+  {title:"ADR", items:[
+    {id:"adr-process", label:"ADR Process", status:"approved"},
+    {id:"adr-0003", label:"ADR-0003 Escrow Settlement", status:"implemented"},
+    {id:"adr-0006", label:"ADR-0006 Attestor Trust Model", status:"proposed"},
+    {id:"adr-0008", label:"ADR-0008 DB & Event Consistency", status:"proposed"},
+    {id:"adr-0010", label:"ADR-0010 Settlement Sequencing", status:"proposed"},
+    {id:"adr-0012", label:"ADR-0012 Account Wallets (Privy)", status:"proposed"},
+  ]},
+  {title:"Templates", items:[
+    {id:"tpl-adr", label:"ADR Template", status:"approved"},
+    {id:"tpl-integration", label:"Integration Validation Template", status:"approved"},
+    {id:"tpl-layer", label:"Layer Spec Template", status:"approved"},
+  ]},
+  {title:"Figma", items:[
+    {id:"figma", label:"Board Index", status:"proposed"},
+  ]},
+];
+
+const FLAT = NAV.flatMap(g => g.items.map(it => ({...it, group:g.title})));
+const STATUS_LABEL = {idea:"IDEA",proposed:"PROPOSED",undecided:"UNDECIDED",needs_validation:"NEEDS VALIDATION",in_review:"IN REVIEW",approved:"APPROVED",implemented:"IMPLEMENTED",verified:"VERIFIED",deprecated:"DEPRECATED",blocked:"BLOCKED"};
+
+function buildNav(filter){
+  const root = document.getElementById('navroot');
+  root.innerHTML = '';
+  NAV.forEach(group=>{
+    const items = group.items.filter(it => !filter || it.label.toLowerCase().includes(filter.toLowerCase()));
+    if(!items.length) return;
+    const g = document.createElement('div'); g.className='navgroup';
+    const h = document.createElement('h2'); h.textContent = group.title; g.appendChild(h);
+    items.forEach(it=>{
+      const el = document.createElement('div');
+      el.className = 'navitem'; el.id = 'nav-'+it.id;
+      el.innerHTML = `<span class="navdot st-${it.status}"></span><span>${it.label}</span>`;
+      el.onclick = ()=>{ navigate(it.id); toggleSidebar(false); };
+      g.appendChild(el);
+    });
+    root.appendChild(g);
+  });
+}
+function filterNav(v){ buildNav(v); }
+
+function mdToHtml(id){
+  const src = document.getElementById('src-'+id);
+  if(!src) return '<p>Section not found.</p>';
+  return marked.parse(src.textContent);
+}
+
+function statusBar(status){
+  const label = STATUS_LABEL[status] || status.toUpperCase();
+  return `<span class="badge"><span class="dot navdot st-${status}"></span>${label}</span>`;
+}
+
+function navigate(id){
+  const item = FLAT.find(f=>f.id===id) || FLAT[0];
+  document.getElementById('content').innerHTML = mdToHtml(item.id);
+  document.getElementById('statusbar').innerHTML = statusBar(item.status) + `<span class="badge">${item.group}</span>`;
+  document.getElementById('crumb').textContent = 'MELO / ' + item.group + ' / ' + item.label;
+  document.querySelectorAll('.navitem').forEach(n=>n.classList.remove('active'));
+  const navEl = document.getElementById('nav-'+id); if(navEl) navEl.classList.add('active');
+
+  const idx = FLAT.findIndex(f=>f.id===id);
+  const prev = FLAT[idx-1], next = FLAT[idx+1];
+  document.getElementById('pagenav').innerHTML =
+    (prev ? `<a onclick="navigate('${prev.id}')"><span class="lbl">← Previous</span>${prev.label}</a>` : '<span></span>') +
+    (next ? `<a onclick="navigate('${next.id}')"><span class="lbl">Next →</span>${next.label}</a>` : '<span></span>');
+
+  try{ localStorage.setItem('melo-wb-last', id); }catch(e){}
+  window.scrollTo(0,0);
+  document.getElementById('mainwrap').scrollTo(0,0);
+}
+
+function toggleSidebar(force){
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('overlay');
+  const open = force !== undefined ? force : !sb.classList.contains('open');
+  sb.classList.toggle('open', open);
+  ov.classList.toggle('show', open);
+}
+
+function toggleTheme(){
+  const root = document.documentElement;
+  const cur = root.getAttribute('data-theme');
+  let next;
+  if(!cur){
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    next = prefersDark ? 'light' : 'dark';
+  } else {
+    next = cur === 'dark' ? 'light' : 'dark';
+  }
+  root.setAttribute('data-theme', next);
+  try{ localStorage.setItem('melo-wb-theme', next); }catch(e){}
+}
+
+(function init(){
+  try{
+    const t = localStorage.getItem('melo-wb-theme');
+    if(t) document.documentElement.setAttribute('data-theme', t);
+  }catch(e){}
+  buildNav('');
+  let start = 'readme';
+  try{ const last = localStorage.getItem('melo-wb-last'); if(last && FLAT.find(f=>f.id===last)) start = last; }catch(e){}
+  navigate(start);
+})();
+</script>
+</body>
+</html>

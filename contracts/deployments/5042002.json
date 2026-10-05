@@ -1,0 +1,17 @@
+{
+  "network": "arcTestnet",
+  "chainId": 5042002,
+  "escrow": "0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "deployBlock": "64794401",
+  "deployTx": "0x0c3b490101dadced68813407e2333d71d43e4ec5b0ffc31e41ab2f5715c23512",
+  "owner": "0x10Ede187d03D651fc68f62a2d6501F67A6e93a86",
+  "quoteSigner": "0x10Ede187d03D651fc68f62a2d6501F67A6e93a86",
+  "attestors": [
+    "0x10Ede187d03D651fc68f62a2d6501F67A6e93a86"
+  ],
+  "threshold": "1",
+  "maxAmount": "1000000000",
+  "explorer": "https://explorer.testnet.arc.io/address/0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85",
+  "deployedAt": "2026-09-30T14:59:18.381Z"
+}

@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+*.log
+
+# Secrets live in gitignored .env files; examples carry no values.
+.env
+.env.*
+!.env.example
+!.env.test.example

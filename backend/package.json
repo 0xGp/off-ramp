@@ -1,0 +1,34 @@
+{
+  "name": "@melo/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "db:start": "bash scripts/db.sh start",
+    "db:stop": "bash scripts/db.sh stop",
+    "dev:api": "node --env-file-if-exists=.env --watch src/api/main.ts",
+    "dev:worker": "node --env-file-if-exists=.env --watch src/worker/main.ts",
+    "start:api": "node --env-file-if-exists=.env src/api/main.ts",
+    "start:worker": "node --env-file-if-exists=.env src/worker/main.ts",
+    "migrate": "node --env-file-if-exists=.env src/db/migrate.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --env-file-if-exists=.env.test --test --test-concurrency=1 \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "fastify": "^5.12.5",
+    "graphile-worker": "^0.18.0",
+    "jose": "^6.2.12",
+    "pg": "^8.23.1",
+    "viem": "^2.57.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/pg": "^8.23.1",
+    "typescript": "^7.0.2"
+  }
+}
