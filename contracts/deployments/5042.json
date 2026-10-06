@@ -1,0 +1,17 @@
+{
+  "network": "arcMainnet",
+  "chainId": 5042,
+  "escrow": "0x52e991BeAbEB2DBF9D7090Dcba8AC943D6Ce1A30",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "deployBlock": "24614569",
+  "deployTx": "0x28f38a21a8c5592ff55547f1343f5cdd722dea619868d963453fa6a4e1fbd688",
+  "owner": "0xFE428F1E506c7b0e394b50D222205d52e4b257Be",
+  "quoteSigner": "0xc66AAA13efe456eB450206A54F046263FACbbFD7",
+  "attestors": [
+    "0x00B4732Ebb7EB9983812Df2D4eC883fb62F0C1e0"
+  ],
+  "threshold": "1",
+  "maxAmount": "2000000",
+  "explorer": "https://explorer.arc.io/address/0x52e991BeAbEB2DBF9D7090Dcba8AC943D6Ce1A30",
+  "deployedAt": "2026-10-06T20:08:55.290Z"
+}

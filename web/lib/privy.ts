@@ -1,5 +1,8 @@
-import type { PrivyClientConfig } from "@privy-io/react-auth";
-import { DEFAULT_CHAIN, SUPPORTED_CHAINS } from "./chains";
+import { addRpcUrlOverrideToChain, type PrivyClientConfig } from "@privy-io/react-auth";
+import { chainRelayUrl, DEFAULT_CHAIN, SUPPORTED_CHAINS, type MeloChain } from "./chains";
+
+/** The embedded wallet reads balances and sends transactions through our relay, not the public RPC host. */
+const privyChain = (c: MeloChain) => addRpcUrlOverrideToChain(c.wagmiChain, chainRelayUrl(c));
 
 /** Public app ID from the Privy dashboard. The app secret lives only in the backend. */
 export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
@@ -14,8 +17,8 @@ export const privyConfig: PrivyClientConfig = {
     ethereum: { createOnLogin: "all-users" },
     showWalletUIs: true,
   },
-  defaultChain: DEFAULT_CHAIN.wagmiChain,
-  supportedChains: SUPPORTED_CHAINS.map((c) => c.wagmiChain),
+  defaultChain: privyChain(DEFAULT_CHAIN),
+  supportedChains: SUPPORTED_CHAINS.map(privyChain),
   appearance: {
     theme: "light",
     accentColor: "#1b1d17",

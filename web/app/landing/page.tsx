@@ -5,7 +5,7 @@ import { MeloMark } from "@/components/landing/melo-mark";
 import { CubeMark } from "@/components/landing/cube-mark";
 import { SettlementRail } from "@/components/landing/settlement-rail";
 import { ApiSample } from "@/components/landing/api-sample";
-import { arcTestnet } from "@/lib/chains";
+import { DEFAULT_CHAIN } from "@/lib/chains";
 import { shortHex } from "@/lib/money";
 
 export const metadata: Metadata = {
@@ -46,11 +46,11 @@ const PRINCIPLES = [
 ];
 
 const ARC_FACTS = [
-  { label: "Network", value: arcTestnet.name },
-  { label: "Chain ID", value: String(arcTestnet.id), mono: true },
+  { label: "Network", value: DEFAULT_CHAIN.name },
+  { label: "Chain ID", value: String(DEFAULT_CHAIN.id), mono: true },
   { label: "Gas token", value: "USDC" },
   { label: "Finality", value: "Deterministic, under 1s" },
-  { label: "USDC contract", value: shortHex(arcTestnet.usdc.address, 6, 4), mono: true },
+  { label: "USDC contract", value: shortHex(DEFAULT_CHAIN.usdc.address, 6, 4), mono: true },
 ];
 
 const ENDPOINTS = [

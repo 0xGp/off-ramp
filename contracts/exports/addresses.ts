@@ -4,6 +4,7 @@ import type { Address } from "viem";
 export type EscrowDeployment = { escrow: Address; usdc: Address; deployBlock: bigint };
 
 export const escrowDeployments: Record<number, EscrowDeployment> = {
+  5042: { escrow: "0x52e991BeAbEB2DBF9D7090Dcba8AC943D6Ce1A30", usdc: "0x3600000000000000000000000000000000000000", deployBlock: 24614569n },
   5042002: { escrow: "0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85", usdc: "0x3600000000000000000000000000000000000000", deployBlock: 64794401n },
   84532: { escrow: "0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85", usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", deployBlock: 47506703n },
 };

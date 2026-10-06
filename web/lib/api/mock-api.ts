@@ -200,11 +200,16 @@ type QuoteSource = (
 /** The saved-account flow only carries the last four digits; the full number never leaves the backend. */
 const MASKED_ACCOUNT = /^•+\d{4}$/;
 
-let backendQuoteSource: QuoteSource | null = null;
+/** Kept on globalThis so a hot reload of this module doesn't drop the registration. */
+const registry = globalThis as typeof globalThis & { __meloBackendQuoteSource?: QuoteSource | null };
+
+function backendQuoteSourceNow(): QuoteSource | null {
+  return registry.__meloBackendQuoteSource ?? null;
+}
 
 /** Registered while signed in to the MELO backend; quotes then come from `POST /v1/quotes`. */
 export function setBackendQuoteSource(source: QuoteSource | null) {
-  backendQuoteSource = source;
+  registry.__meloBackendQuoteSource = source;
 }
 
 /**
@@ -368,7 +373,7 @@ export function createMockApi(): MeloApi {
       const bank = (await loadBanks(options?.signal)).find((b) => b.code === request.recipient.bankCode);
       if (!bank) throw new ApiError("validation", "Choose a supported bank.", { status: 422 });
       const savedAccount = MASKED_ACCOUNT.test(request.recipient.accountNumber);
-      if (savedAccount && !backendQuoteSource) {
+      if (savedAccount && !backendQuoteSourceNow()) {
         throw new ApiError("network", "Can't reach MELO to use your saved account. Try again shortly.");
       }
       // A saved account was name-checked by the backend when it was added; the quote returns that name.
@@ -397,6 +402,7 @@ export function createMockApi(): MeloApi {
       const intent = load().intents[intentId];
       if (!intent) throw new ApiError("not-found", "We couldn't find that cash-out.", { status: 404 });
       if (intent.authorizedAt) throw new ApiError("validation", "This cash-out is already authorized.", { status: 409 });
+      const backendQuoteSource = backendQuoteSourceNow();
       const backend = backendQuoteSource
         ? await backendQuoteSource(
             {
@@ -428,9 +434,11 @@ export function createMockApi(): MeloApi {
         throw new ApiError("quote-expired", "A newer quote replaced this one. Review it and sign again.", { status: 409 });
       }
       if (intent.authorizedAt) return toView(intent, Date.now());
-      if (Date.now() >= intent.quote.expiresAt) {
+      // A confirmed onchain deposit already beat the quote expiry; the escrow contract enforced it.
+      if (!request.escrowTxHash && Date.now() >= intent.quote.expiresAt) {
         throw new ApiError("quote-expired", "The quote expired before your signature arrived.", { status: 409 });
       }
+      if (request.escrowTxHash) intent.escrowTxHash = request.escrowTxHash;
       intent.authorizedAt = Date.now();
       save(store);
       return toView(intent, Date.now());

@@ -22,6 +22,13 @@ export default defineConfig({
     },
   },
   networks: {
+    arcMainnet: {
+      type: "http",
+      chainType: "generic",
+      chainId: 5042,
+      url: configVariable("ARC_MAINNET_RPC_URL"),
+      accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
+    },
     arcTestnet: {
       type: "http",
       chainType: "generic",

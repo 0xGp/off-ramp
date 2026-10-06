@@ -35,6 +35,40 @@ npm run dev               # Ctrl-C stops all of it
 | PUT | `/v1/me/bank-account` | Privy token | Save or replace the payout account; returns the same body as `/v1/me` |
 | POST | `/v1/quotes` | Privy token | `{chainId, amount}` (USDC decimal string). Needs a usable bank account. Prices the payout (amount minus `MELO_FEE_BPS`) at Paycrest's live sell rate on Base, stores the offer for `QUOTE_TTL_SECONDS` (default 90). `no-route` when no provider can fill the amount |
 | GET | `/v1/quotes/:id` | Privy token | The caller's own quote |
+| POST | `/v1/quotes/:id/deposit` | Privy token | MELO-signed `DepositTerms` (EIP-712, domain `MeloEscrow`/`1`) for an unexpired quote; one per quote. Refund opens `DEPOSIT_REFUND_DELAY_MINUTES` after quote expiry. Needs `QUOTE_SIGNER_PRIVATE_KEY` and `ESCROW_PAYEE_ADDRESS` |
+| POST | `/v1/deposits/:id/confirm` | Privy token | `{txHash}`. Reads the receipt and marks the deposit `escrowed` only if it emitted the matching `Deposited` event; `chain-pending` until the receipt exists |
+| GET | `/v1/deposits/:id` | Privy token | The caller's own deposit |
+| POST | `/v1/webhooks/paycrest` | `X-Paycrest-Signature` | HMAC-SHA256 of the raw body with `PAYCREST_API_SECRET`. Stores each delivery once (account number reduced to last 4); `settled` completes the payout, `refunded`/`expired` fail it, then `escrow_settle` is queued |
+
+### After a deposit (worker)
+
+Confirming a deposit queues `payout_start` in the same transaction. The worker then runs
+`payout_start` → `payout_poll` (every 5 s) → `escrow_settle`, which signs an attestation with
+`ATTESTOR_PRIVATE_KEY` and calls `settle` on the escrow: a successful payout releases the USDC to
+`ESCROW_PAYEE_ADDRESS`, a failed one refunds the depositor. Every step is safe to retry.
+The Paycrest webhook and the poll share the job key `settle:<payoutId>`, so whichever reports
+the outcome first queues the single settlement.
+
+`PAYOUT_PROVIDER=simulated` (default) fakes the payout (`SIM_PAYOUT_SECONDS`, `SIM_PAYOUT_OUTCOME`).
+`PAYOUT_PROVIDER=paycrest` places a real mainnet order for the quote's bank account and records
+Paycrest's funding instructions (`funding_address`, `funding_amount_units`, `funding_valid_until`
+on `payouts`). An order Paycrest refuses (e.g. rate drift) fails the payout with `failure_reason`.
+
+Funding (`PAYOUT_FUNDING=on`, needs `TREASURY_PRIVATE_KEY`): `payout_fund` runs on the serial
+`treasury` queue and sends exactly `amountToTransfer` USDC on Base from the treasury. The transfer
+is signed and its hash and bytes stored before broadcast; retries rebroadcast the same bytes and a
+payout is never re-signed, so it can't be paid twice. It skips (`funding_skipped`) orders above
+`PAYOUT_FUNDING_MAX_USDC`, with under a minute left, or when the treasury lacks USDC or gas; an
+unfunded order expires, polling reports it failed, and the escrow refunds the depositor. With
+funding off, orders are created and simply expire.
+
+Treasury balances (read-only, never prints the key): `node --env-file=.env scripts/treasury.ts`.
+
+End-to-end on Arc Testnet (live quote, real deposit and settlement, with `npm run dev` running):
+
+```bash
+node --env-file=.env scripts/e2e-deposit.ts 1
+```
 
 `onboarding` is `{ complete, nextStep: "wallet" | "bank-account" | null, completedAt }`. The web app sends signed-in users to account setup until `complete` is true. `completedAt` is recorded once, the first time both the wallet and a bank account exist.
 

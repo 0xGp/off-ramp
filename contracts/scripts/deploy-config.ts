@@ -12,6 +12,16 @@ export type ChainDeployConfig = {
 };
 
 export const DEPLOY_CONFIG: Record<string, ChainDeployConfig> = {
+  // https://docs.arc.io/arc/references/connect-to-arc and /contract-addresses (accessed 2026-10-06).
+  // Launch cap is deliberately tiny; the owner raises it with configureToken.
+  arcMainnet: {
+    name: "Arc",
+    chainId: 5042,
+    usdc: "0x3600000000000000000000000000000000000000",
+    maxAmount: 2_000_000n,
+    minMaxFeePerGas: 20_000_000_000n,
+    explorer: "https://explorer.arc.io",
+  },
   arcTestnet: {
     name: "Arc Testnet",
     chainId: 5042002,

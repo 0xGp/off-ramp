@@ -11,6 +11,7 @@
     "test": "hardhat test",
     "typecheck": "hardhat compile && tsc --noEmit",
     "export": "hardhat compile && node scripts/export.ts",
+    "deploy:arc-mainnet": "node --env-file=.env.mainnet node_modules/hardhat/dist/src/cli.js run scripts/deploy.ts --network arcMainnet --build-profile production",
     "deploy:arc": "node --env-file-if-exists=.env node_modules/hardhat/dist/src/cli.js run scripts/deploy.ts --network arcTestnet",
     "deploy:base": "node --env-file-if-exists=.env node_modules/hardhat/dist/src/cli.js run scripts/deploy.ts --network baseSepolia"
   },

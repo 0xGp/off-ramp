@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 
-import { createTestApp } from "./helpers.ts";
+import { recoverTypedDataAddress } from "viem";
+
+import { depositTermsTypes } from "../src/chain/escrow.ts";
+import { createTestApp, PAYEE } from "./helpers.ts";
 
 const ALICE = "did:privy:alice";
 const BOB = "did:privy:bob";
@@ -207,6 +210,103 @@ describe("API", async () => {
     } finally {
       t.directory.noRoute = false;
     }
+  });
+
+  it("signs DepositTerms for a quote that recover to the quote signer, once per quote", async () => {
+    const token = await t.signer.token({ sub: ALICE, iat: nowSec() });
+    const { body } = await call("POST", "/v1/quotes", { token, body: { chainId: 5042002, amount: "25" } });
+    const quote = body.quote;
+
+    const res = await call("POST", `/v1/quotes/${quote.id}/deposit`, { token });
+    assert.equal(res.status, 200);
+    const d = res.body.deposit;
+    assert.equal(d.status, "awaiting_deposit");
+    assert.equal(d.chainId, 5042002);
+    assert.equal(d.escrow, "0x8C4D6fDe62399ffAC59f94748aD7971d146D7C85");
+    assert.equal(d.terms.depositor, WALLET);
+    assert.equal(d.terms.token, "0x3600000000000000000000000000000000000000");
+    assert.equal(d.terms.amount, "25000000");
+    assert.equal(d.terms.payee, PAYEE);
+    assert.equal(d.terms.quoteExpiry, String(Date.parse(quote.expiresAt) / 1000));
+    assert.equal(BigInt(d.terms.refundAfter) - BigInt(d.terms.quoteExpiry), 7200n);
+    assert.match(d.terms.intentId, /^0x[0-9a-f]{64}$/);
+
+    const recovered = await recoverTypedDataAddress({
+      domain: { name: "MeloEscrow", version: "1", chainId: 5042002, verifyingContract: d.escrow },
+      types: depositTermsTypes,
+      primaryType: "DepositTerms",
+      message: {
+        ...d.terms,
+        amount: BigInt(d.terms.amount),
+        quoteExpiry: BigInt(d.terms.quoteExpiry),
+        refundAfter: BigInt(d.terms.refundAfter),
+      },
+      signature: d.signature,
+    });
+    assert.equal(recovered, t.quoteSigner.address);
+
+    const again = await call("POST", `/v1/quotes/${quote.id}/deposit`, { token });
+    assert.deepEqual(again.body.deposit, d, "same terms for the same quote");
+
+    const bob = await t.signer.token({ sub: BOB, iat: nowSec() });
+    assert.equal((await call("POST", `/v1/quotes/${quote.id}/deposit`, { token: bob })).status, 404);
+  });
+
+  it("refuses to sign for an expired quote", async () => {
+    const token = await t.signer.token({ sub: ALICE, iat: nowSec() });
+    const { body } = await call("POST", "/v1/quotes", { token, body: { chainId: 5042002, amount: "5" } });
+    const start = clock;
+    clock = new Date(start.getTime() + 91_000);
+    try {
+      const res = await call("POST", `/v1/quotes/${body.quote.id}/deposit`, { token });
+      assert.equal(res.status, 409);
+      assert.equal(res.body.error.code, "quote-expired");
+    } finally {
+      clock = start;
+    }
+  });
+
+  it("confirms a deposit only from a successful transaction with the matching Deposited event", async () => {
+    const token = await t.signer.token({ sub: ALICE, iat: nowSec() });
+    const { body } = await call("POST", "/v1/quotes", { token, body: { chainId: 5042002, amount: "10" } });
+    const { deposit } = (await call("POST", `/v1/quotes/${body.quote.id}/deposit`, { token })).body;
+    const confirm = (txHash: string) => call("POST", `/v1/deposits/${deposit.id}/confirm`, { token, body: { txHash } });
+    const event = {
+      intentId: deposit.terms.intentId,
+      depositor: deposit.terms.depositor,
+      token: deposit.terms.token,
+      amount: BigInt(deposit.terms.amount),
+      payee: deposit.terms.payee,
+      recipientCommitment: deposit.terms.recipientCommitment,
+      refundAfter: BigInt(deposit.terms.refundAfter),
+    };
+
+    const pending = await confirm(`0x${"1".repeat(64)}`);
+    assert.equal(pending.status, 409);
+    assert.equal(pending.body.error.code, "chain-pending");
+
+    t.chain.receipts.set(`0x${"2".repeat(64)}`, { status: "reverted" });
+    assert.equal((await confirm(`0x${"2".repeat(64)}`)).status, 422);
+
+    t.chain.receipts.set(`0x${"3".repeat(64)}`, {
+      status: "success",
+      blockNumber: 7n,
+      events: [{ ...event, amount: event.amount - 1n }],
+    });
+    assert.equal((await confirm(`0x${"3".repeat(64)}`)).status, 422, "amount must match the signed terms");
+
+    const good = `0x${"4".repeat(64)}`;
+    t.chain.receipts.set(good, { status: "success", blockNumber: 8n, events: [event] });
+    const ok = await confirm(good);
+    assert.equal(ok.status, 200);
+    assert.equal(ok.body.deposit.status, "escrowed");
+    assert.equal(ok.body.deposit.txHash, good);
+
+    assert.equal((await confirm(good)).status, 200, "confirming again with the same tx is a no-op");
+    assert.equal((await confirm(`0x${"3".repeat(64)}`)).status, 422);
+    const audit = await t.db.query("select count(*)::int as n from audit_events where kind = 'deposit.escrowed'");
+    assert.equal(audit.rows[0].n, 1);
+    assert.equal((await call("GET", `/v1/deposits/${deposit.id}`, { token })).body.deposit.status, "escrowed");
   });
 
   it("treats saving the same account again as a no-op", async () => {

@@ -64,6 +64,8 @@ export interface AuthorizeIntentRequest {
   quoteId: string;
   signature: string;
   signer: string;
+  /** Set when the USDC is already locked onchain; the backend has confirmed this deposit. */
+  escrowTxHash?: string;
 }
 
 export interface ResolvedAccount {

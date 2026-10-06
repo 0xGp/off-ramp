@@ -6,7 +6,11 @@ const config = loadConfig();
 const services = createServices(config);
 await prepareDatabase(services.db);
 
-const app = await buildApp({ ...services, corsOrigins: config.CORS_ORIGINS });
+const app = await buildApp({
+  ...services,
+  corsOrigins: config.CORS_ORIGINS,
+  paycrestWebhookSecret: config.PAYCREST_API_SECRET,
+});
 
 const shutdown = async () => {
   await app.close();

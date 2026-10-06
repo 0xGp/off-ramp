@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "bash scripts/dev.sh",
+    "live": "bash scripts/live.sh",
     "db:stop": "npm --prefix backend run db:stop",
     "test": "npm --prefix backend test"
   }

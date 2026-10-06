@@ -1,16 +1,20 @@
 import { run } from "graphile-worker";
 
-import { createPool } from "../db/pool.ts";
-import { prepareDatabase } from "../runtime.ts";
-import { tasks } from "./tasks.ts";
+import { loadConfig } from "../config.ts";
+import { createServices, prepareDatabase } from "../runtime.ts";
+import { createTasks } from "./tasks.ts";
 
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is required");
-
-const db = createPool(url);
+const config = loadConfig();
+const services = createServices(config);
+const { db } = services;
 await prepareDatabase(db);
 
-const runner = await run({ pgPool: db, concurrency: 5, pollInterval: 1000, taskList: tasks });
+const runner = await run({
+  pgPool: db,
+  concurrency: 5,
+  pollInterval: 1000,
+  taskList: createTasks({ payouts: services.payouts, funding: services.funding }),
+});
 
 const shutdown = async () => {
   await runner.stop();

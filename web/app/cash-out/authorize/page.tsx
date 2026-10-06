@@ -6,9 +6,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { BaseError, UserRejectedRequestError } from "viem";
 import { useSignTypedData } from "wagmi";
 import { AlertTriangle, FileSignature, Info, Landmark, LoaderCircle, Lock, RotateCcw, ShieldCheck, TimerOff } from "lucide-react";
-import { getChain } from "@/lib/chains";
+import { getChain, IS_MAINNET } from "@/lib/chains";
 import { shortHex } from "@/lib/money";
 import { api, toApiError, type AuthorizationTypedData } from "@/lib/api";
+import { ApiError } from "@/lib/api/errors";
+import { DepositError, useEscrowDeposit, type DepositPhase } from "@/lib/escrow-deposit";
 import { queryKeys } from "@/lib/api/queries";
 import { deserializeQuote } from "@/lib/offramp/model";
 import { useWallet } from "@/lib/use-wallet";
@@ -40,8 +42,21 @@ const ESCROW_STEPS = [
   },
 ];
 
-type Phase = "idle" | "signing" | "submitting";
-type AuthError = FlowError | { code: "rejected"; message: string };
+type Phase = "idle" | "signing" | "submitting" | DepositPhase;
+type AuthError = FlowError | { code: "rejected" | DepositError["code"]; message: string };
+
+const PHASE_LABEL: Record<Exclude<Phase, "idle">, string> = {
+  signing: "Check your wallet…",
+  submitting: "Submitting authorization…",
+  preparing: "Preparing your deposit…",
+  switching: "Switching network…",
+  approving: "Approve USDC in your wallet…",
+  depositing: "Confirm the deposit in your wallet…",
+  confirming: "Confirming onchain…",
+};
+
+/** Backend quotes have UUID ids; the in-browser simulation uses `qt_…`. */
+const isBackendQuote = (quoteId: string) => /^[0-9a-f-]{36}$/i.test(quoteId);
 
 /** The API sends uint values as decimal strings; the wallet needs them as bigint. */
 function toSignable(data: AuthorizationTypedData) {
@@ -68,6 +83,7 @@ function Authorize() {
   const queryClient = useQueryClient();
   const { address } = useWallet();
   const { signTypedDataAsync } = useSignTypedData();
+  const escrowDeposit = useEscrowDeposit();
   const { intentId, offer, recipient, preview, chainId } = useAppSelector((s) => s.offramp);
   const chain = getChain(chainId);
   const now = useNow();
@@ -76,6 +92,7 @@ function Authorize() {
 
   if (!intentId || !offer || !recipient) return <StepSkeleton />;
 
+  const live = !preview && isBackendQuote(offer.quote.quoteId);
   const quote = deserializeQuote(offer.quote);
   const expired = now !== null && now >= quote.expiresAt;
   const secondsLeft = now === null ? null : Math.max(0, Math.ceil((quote.expiresAt - now) / 1000));
@@ -86,7 +103,46 @@ function Authorize() {
     router.push("/cash-out/quote");
   };
 
+  const finish = async (request: { signature: string; signer: string; escrowTxHash?: string }) => {
+    setPhase("submitting");
+    try {
+      const view = await api.authorizeIntent(
+        intentId,
+        { quoteId: offer.quote.quoteId, ...request },
+        { idempotencyKey: `auth_${offer.quote.quoteId}` },
+      );
+      queryClient.setQueryData(queryKeys.intent(view.id), view);
+      queryClient.invalidateQueries({ queryKey: queryKeys.activity });
+      router.push(`/intent/${view.id}`);
+    } catch (err) {
+      const apiError = toApiError(err);
+      setPhase("idle");
+      setError({ code: apiError.code, message: apiError.message });
+    }
+  };
+
+  const lockUsdc = async () => {
+    if (!address) return;
+    setError(null);
+    try {
+      const { deposit, txHash } = await escrowDeposit(offer.quote.quoteId, setPhase);
+      await finish({ signature: deposit.signature, signer: address, escrowTxHash: txHash });
+    } catch (err) {
+      setPhase("idle");
+      if (isUserRejection(err)) {
+        setError({ code: "rejected", message: "You cancelled in your wallet. Nothing was locked." });
+      } else if (err instanceof DepositError) {
+        setError({ code: err.code, message: err.message });
+      } else if (err instanceof ApiError) {
+        setError({ code: err.code, message: err.message });
+      } else {
+        setError({ code: "network", message: err instanceof Error ? err.message.split("\n")[0] : "The deposit failed." });
+      }
+    }
+  };
+
   const authorize = async () => {
+    if (live) return lockUsdc();
     setError(null);
     let signature = "0xpreview";
     let signer = "preview";
@@ -106,22 +162,7 @@ function Authorize() {
         return;
       }
     }
-
-    setPhase("submitting");
-    try {
-      const view = await api.authorizeIntent(
-        intentId,
-        { quoteId: offer.quote.quoteId, signature, signer },
-        { idempotencyKey: `auth_${offer.quote.quoteId}` },
-      );
-      queryClient.setQueryData(queryKeys.intent(view.id), view);
-      queryClient.invalidateQueries({ queryKey: queryKeys.activity });
-      router.push(`/intent/${view.id}`);
-    } catch (err) {
-      const apiError = toApiError(err);
-      setPhase("idle");
-      setError({ code: apiError.code, message: apiError.message });
-    }
+    await finish({ signature, signer });
   };
 
   if (error?.code === "quote-expired") {
@@ -154,8 +195,12 @@ function Authorize() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <StepHeading
-        title="Authorize escrow"
-        description={`You'll sign once in your wallet to lock ${formatUsdc(quote.inputAmount, quote.inputDecimals)} for this cash-out.`}
+        title={live ? "Swap USDC to naira" : "Authorize swap"}
+        description={
+          live
+            ? `Your wallet approves and deposits ${formatUsdc(quote.inputAmount, quote.inputDecimals)} into the MELO escrow contract on ${chain.name}.`
+            : `You'll sign once in your wallet to lock ${formatUsdc(quote.inputAmount, quote.inputDecimals)} for this cash-out.`
+        }
       />
 
       <ol className="flex flex-col gap-4">
@@ -194,7 +239,11 @@ function Authorize() {
       <Notice icon={<Info aria-hidden />}>
         {preview
           ? "Preview mode: nothing is signed, and the escrow and payout that follow are simulated."
-          : "Testnet preview: you sign a typed authorization (EIP-712). The escrow contract isn't deployed yet, so no USDC moves and the steps after this are simulated."}
+          : live && IS_MAINNET
+            ? `This moves real USDC into the escrow contract on ${chain.name}${chain.gasToken === "USDC" ? ", and the network fee is paid in USDC" : ""}. Naira is sent to your bank account once it's locked.`
+            : live
+            ? `Testnet: this locks real test USDC in the escrow contract on ${chain.name}${chain.gasToken === "USDC" ? ", and the network fee is paid in USDC" : ""}. The naira payout after it is still simulated.`
+            : "Testnet preview: you sign a typed authorization (EIP-712). No USDC moves and the steps after this are simulated."}
       </Notice>
 
       {error ? (
@@ -213,13 +262,7 @@ function Authorize() {
         ) : (
           <button type="button" onClick={authorize} disabled={busy} className={primaryButtonClass}>
             {busy ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden /> : null}
-            {phase === "signing"
-              ? "Check your wallet…"
-              : phase === "submitting"
-                ? "Submitting authorization…"
-                : preview
-                  ? "Simulate authorization"
-                  : "Sign & lock USDC"}
+            {phase !== "idle" ? PHASE_LABEL[phase] : preview ? "Simulate authorization" : live ? "Swap" : "Sign & swap"}
           </button>
         )}
         <button type="button" onClick={() => router.push("/cash-out/quote")} disabled={busy} className={secondaryButtonClass}>

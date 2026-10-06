@@ -6,6 +6,8 @@ export type ErrorCode =
   | "not-found"
   | "account-incomplete"
   | "no-route"
+  | "quote-expired"
+  | "chain-pending"
   | "provider-unavailable"
   | "internal";
 
@@ -16,6 +18,8 @@ const STATUS: Record<ErrorCode, number> = {
   "not-found": 404,
   "account-incomplete": 409,
   "no-route": 422,
+  "quote-expired": 409,
+  "chain-pending": 409,
   "provider-unavailable": 503,
   internal: 500,
 };

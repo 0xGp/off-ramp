@@ -1,10 +1,12 @@
 import { defineChain, type Chain } from "viem";
-import { arcTestnet as viemArcTestnet, baseSepolia as viemBaseSepolia } from "viem/chains";
+import { arc as viemArc, arcTestnet as viemArcTestnet, baseSepolia as viemBaseSepolia } from "viem/chains";
 
 export interface MeloChain {
   id: number;
   name: string;
   rpcUrl: string;
+  /** Tried in order by the relay when `rpcUrl` fails. */
+  fallbackRpcUrls: readonly string[];
   explorerUrl: string;
   /** What the wallet pays network fees in. */
   gasToken: "USDC" | "ETH";
@@ -26,6 +28,7 @@ export const arcTestnet: MeloChain = {
   id: 5042002,
   name: "Arc Testnet",
   rpcUrl: ARC_TESTNET_RPC,
+  fallbackRpcUrls: ["https://rpc.quicknode.testnet.arc.io"],
   explorerUrl: ARC_TESTNET_EXPLORER,
   gasToken: "USDC",
   usdc: { address: "0x3600000000000000000000000000000000000000", erc20Decimals: 6 },
@@ -47,6 +50,7 @@ export const baseSepolia: MeloChain = {
   id: 84532,
   name: "Base Sepolia",
   rpcUrl: "https://sepolia.base.org",
+  fallbackRpcUrls: [],
   explorerUrl: "https://sepolia.basescan.org",
   gasToken: "ETH",
   usdc: { address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", erc20Decimals: 6 },
@@ -54,9 +58,47 @@ export const baseSepolia: MeloChain = {
   wagmiChain: viemBaseSepolia,
 };
 
-/** Mainnet parameters are NEEDS_VALIDATION per the handbook; do not add them from memory. */
-export const SUPPORTED_CHAINS = [arcTestnet, baseSepolia] as const;
-export const DEFAULT_CHAIN = arcTestnet;
+/**
+ * Arc mainnet values from https://docs.arc.io/arc/references/connect-to-arc (accessed 2026-10-06).
+ * dRPC (https://drpc.org/chainlist/arc-mainnet-rpc) is primary for the relay; Circle's endpoint backs it up.
+ */
+const ARC_MAINNET_RPC = "https://rpc.mainnet.arc.io";
+const ARC_MAINNET_DRPC = "https://arc.drpc.org";
+const ARC_MAINNET_EXPLORER = "https://explorer.arc.io";
+
+export const arcMainnet: MeloChain = {
+  id: 5042,
+  name: "Arc",
+  rpcUrl: ARC_MAINNET_DRPC,
+  fallbackRpcUrls: [ARC_MAINNET_RPC, "https://rpc.quicknode.mainnet.arc.io"],
+  explorerUrl: ARC_MAINNET_EXPLORER,
+  gasToken: "USDC",
+  usdc: { address: "0x3600000000000000000000000000000000000000", erc20Decimals: 6 },
+  escrow: "0x52e991BeAbEB2DBF9D7090Dcba8AC943D6Ce1A30",
+  wagmiChain: defineChain({
+    ...viemArc,
+    rpcUrls: {
+      default: {
+        http: [ARC_MAINNET_RPC, "https://rpc.blockdaemon.mainnet.arc.io", "https://rpc.quicknode.mainnet.arc.io"],
+        webSocket: ["wss://rpc.quicknode.mainnet.arc.io"],
+      },
+    },
+    blockExplorers: { default: { name: "Arc Explorer", url: ARC_MAINNET_EXPLORER } },
+  }),
+};
+
+/** `NEXT_PUBLIC_MELO_NETWORK=mainnet` serves Arc mainnet only; anything else serves the testnets. */
+export const IS_MAINNET = process.env.NEXT_PUBLIC_MELO_NETWORK === "mainnet";
+export const SUPPORTED_CHAINS: readonly MeloChain[] = IS_MAINNET ? [arcMainnet] : [arcTestnet, baseSepolia];
+export const DEFAULT_CHAIN: MeloChain = SUPPORTED_CHAINS[0]!;
+
+/**
+ * In the browser, chain calls go through app/api/chain/[chainId] on our own origin: ad blockers
+ * and Brave Shields block public RPC hosts like rpc.mainnet.arc.io. The server uses `rpcUrl`.
+ */
+export function chainRelayUrl(chain: MeloChain): string {
+  return typeof window === "undefined" ? chain.rpcUrl : `${window.location.origin}/api/chain/${chain.id}`;
+}
 
 export function getChain(chainId: number | null | undefined): MeloChain {
   return SUPPORTED_CHAINS.find((c) => c.id === chainId) ?? DEFAULT_CHAIN;

@@ -45,12 +45,23 @@ export class BackendError extends Error {
   }
 }
 
-async function backendFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
+/** Maps a backend error onto the flow's error codes so screens show the matching state. */
+export function toFlowApiError(error: BackendError): ApiError {
+  const code = isApiErrorCode(error.code) ? error.code : error.status === 0 ? "network" : "validation";
+  return new ApiError(code, error.message, { status: error.status });
+}
+
+export async function backendFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${BACKEND_URL}${path}`, {
       ...init,
-      headers: { ...init?.headers, authorization: `Bearer ${token}`, "content-type": "application/json" },
+      // The API rejects a JSON content-type with an empty body (e.g. POST /v1/quotes/:id/deposit).
+      headers: {
+        ...init?.headers,
+        authorization: `Bearer ${token}`,
+        ...(init?.body != null ? { "content-type": "application/json" } : {}),
+      },
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
@@ -163,9 +174,7 @@ export function useBackendQuotes() {
         });
         return { quote: toWireQuote(quote), payTo: quote.payTo };
       } catch (error) {
-        if (!(error instanceof BackendError)) throw error;
-        const code = isApiErrorCode(error.code) ? error.code : error.status === 0 ? "network" : "validation";
-        throw new ApiError(code, error.message, { status: error.status });
+        throw error instanceof BackendError ? toFlowApiError(error) : error;
       }
     });
     return () => setBackendQuoteSource(null);

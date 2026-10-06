@@ -10,10 +10,16 @@ import { FieldCipher } from "../src/lib/crypto.ts";
 import { AppError } from "../src/lib/errors.ts";
 import type { BankDirectory, Institution, RateSource } from "../src/paycrest/client.ts";
 import { QuoteService } from "../src/quotes/service.ts";
+import { QuoteSigner, type DepositReader, type DepositReceipt } from "../src/chain/escrow.ts";
+import { DepositService } from "../src/deposits/service.ts";
+import type { PayoutProvider, PayoutStatus } from "../src/payouts/provider.ts";
+import { PayoutService } from "../src/payouts/service.ts";
 import { prepareDatabase } from "../src/runtime.ts";
 import { UserService } from "../src/users/service.ts";
 
 export const APP_ID = "test-app";
+export const PAYEE = "0x000000000000000000000000000000000000bEEF";
+export const WEBHOOK_SECRET = "test-paycrest-secret";
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgres://localhost:54329/melo_test";
 
 export async function createSigner() {
@@ -73,6 +79,27 @@ export class FakeDirectory implements BankDirectory, RateSource {
   }
 }
 
+export class FakeChain implements DepositReader {
+  receipts = new Map<string, DepositReceipt>();
+  async receipt(_chainId: number, _escrow: string, txHash: string): Promise<DepositReceipt> {
+    return this.receipts.get(txHash) ?? { status: "pending" };
+  }
+}
+
+/** Paycrest-named provider whose orders stay pending until a webhook says otherwise. */
+export class FakePaycrest implements PayoutProvider {
+  readonly name = "paycrest";
+  orders: string[] = [];
+  async create(): Promise<{ orderId: string }> {
+    const orderId = `pc-order-${this.orders.length + 1}-${randomBytes(4).toString("hex")}`;
+    this.orders.push(orderId);
+    return { orderId };
+  }
+  async status(): Promise<PayoutStatus> {
+    return "pending";
+  }
+}
+
 export class FakeProfiles implements ProfileLookup {
   profiles = new Map<string, Partial<PrivyProfile>>();
   calls = 0;
@@ -99,6 +126,10 @@ export async function createTestApp(opts: { now?: () => Date } = {}) {
   const policy = { freshAuthSeconds: 300, changeCooldownHours: 24 };
   const bankAccounts = new BankAccountService(db, directory, cipher, policy, opts.now);
   const quotePolicy = { ttlSeconds: 90, feeBps: 30, minUnits: 1_000_000n, maxUnits: 1_000_000_000n };
+  const quoteSigner = new QuoteSigner(`0x${randomBytes(32).toString("hex")}`);
+  const chain = new FakeChain();
+  const paycrest = new FakePaycrest();
+  const payouts = new PayoutService(db, paycrest, null, opts.now);
   const app = await buildApp({
     db,
     directory,
@@ -106,8 +137,11 @@ export async function createTestApp(opts: { now?: () => Date } = {}) {
     users: new UserService(db, profiles),
     bankAccounts,
     quotes: new QuoteService(db, directory, bankAccounts, quotePolicy, opts.now),
+    deposits: new DepositService(db, quoteSigner, chain, { payee: PAYEE, refundDelayMinutes: 120 }, opts.now),
+    payouts,
+    paycrestWebhookSecret: WEBHOOK_SECRET,
     corsOrigins: ["http://localhost:3000"],
     logger: false,
   });
-  return { app, db, signer, directory, profiles, cipher, policy };
+  return { app, db, signer, directory, profiles, cipher, policy, quoteSigner, chain, paycrest, payouts };
 }
