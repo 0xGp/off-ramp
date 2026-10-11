@@ -2,6 +2,9 @@ import { randomBytes } from "node:crypto";
 
 import { exportSPKI, generateKeyPair, SignJWT, type CryptoKey } from "jose";
 
+import { ActivityService } from "../src/activity/service.ts";
+import { AdminAuth, hashAdminPassword } from "../src/admin/auth.ts";
+import { AdminService, type BalanceSource, type BalanceView } from "../src/admin/service.ts";
 import { buildApp } from "../src/api/app.ts";
 import { PrivyTokenVerifier, type PrivyProfile, type ProfileLookup } from "../src/auth/privy.ts";
 import { BankAccountService } from "../src/bank-accounts/service.ts";
@@ -115,7 +118,16 @@ export async function resetDatabase(db: Db) {
   await prepareDatabase(db);
 }
 
-export async function createTestApp(opts: { now?: () => Date } = {}) {
+export const ADMIN_PASSWORD = "correct horse battery staple";
+
+export class FakeBalances implements BalanceSource {
+  views: BalanceView[] = [];
+  async balances() {
+    return this.views;
+  }
+}
+
+export async function createTestApp(opts: { now?: () => Date; admin?: boolean } = {}) {
   const db = createPool(TEST_DATABASE_URL);
   await resetDatabase(db);
   const signer = await createSigner();
@@ -130,18 +142,28 @@ export async function createTestApp(opts: { now?: () => Date } = {}) {
   const chain = new FakeChain();
   const paycrest = new FakePaycrest();
   const payouts = new PayoutService(db, paycrest, null, opts.now);
+  const quotes = new QuoteService(db, directory, bankAccounts, quotePolicy, opts.now);
+  const balances = new FakeBalances();
+  const admin = opts.admin
+    ? {
+        auth: new AdminAuth(hashAdminPassword(ADMIN_PASSWORD), randomBytes(32).toString("base64url")),
+        service: new AdminService(db, balances),
+      }
+    : null;
   const app = await buildApp({
     db,
     directory,
     verifier: new PrivyTokenVerifier(APP_ID, signer.pem),
     users: new UserService(db, profiles),
     bankAccounts,
-    quotes: new QuoteService(db, directory, bankAccounts, quotePolicy, opts.now),
+    quotes,
     deposits: new DepositService(db, quoteSigner, chain, { payee: PAYEE, refundDelayMinutes: 120 }, opts.now),
     payouts,
+    activity: new ActivityService(db, quotes),
+    admin,
     paycrestWebhookSecret: WEBHOOK_SECRET,
     corsOrigins: ["http://localhost:3000"],
     logger: false,
   });
-  return { app, db, signer, directory, profiles, cipher, policy, quoteSigner, chain, paycrest, payouts };
+  return { app, db, signer, directory, profiles, cipher, policy, quoteSigner, chain, paycrest, payouts, balances };
 }

@@ -125,8 +125,10 @@ function Authorize() {
     if (!address) return;
     setError(null);
     try {
-      const { deposit, txHash } = await escrowDeposit(offer.quote.quoteId, setPhase);
-      await finish({ signature: deposit.signature, signer: address, escrowTxHash: txHash });
+      const { deposit } = await escrowDeposit(offer.quote.quoteId, setPhase);
+      // The backend now tracks this cash-out under the deposit id; the simulated intent is left behind.
+      queryClient.invalidateQueries({ queryKey: queryKeys.activity });
+      router.push(`/intent/${deposit.id}`);
     } catch (err) {
       setPhase("idle");
       if (isUserRejection(err)) {

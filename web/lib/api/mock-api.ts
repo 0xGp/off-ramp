@@ -8,7 +8,7 @@
  * Simulated: intents, escrow transactions and payout outcomes. They are fixtures, not evidence.
  * State lives in sessionStorage so a refresh behaves like a server round-trip.
  */
-import { DEFAULT_CHAIN, getChain } from "@/lib/chains";
+import { getChain } from "@/lib/chains";
 import { formatUnits, parseUnits } from "@/lib/money";
 import type { IntentProjection, IntentStatus, PayoutStatus } from "@/lib/offramp/model";
 import { ApiError, isApiErrorCode } from "./errors";
@@ -187,7 +187,7 @@ function toView(intent: StoredIntent, now: number): IntentView {
     escrowContract: getChain(intent.request.chainId).escrow ?? SAMPLE_ESCROW_CONTRACT,
     providerReference: intent.providerReference,
     correlationId: intent.correlationId,
-    sample: false,
+    simulated: true,
     projection: project(intent, now),
   };
 }
@@ -287,43 +287,21 @@ function buildAuthorization(intent: StoredIntent, quote: WireQuote): Authorizati
   };
 }
 
-function sample(id: string, usdc: bigint, netFiat: bigint, status: IntentStatus, daysAgo: number, bankName: string): IntentView {
-  const authorizedAt = Date.UTC(2026, 8, 28, 12) - daysAgo * 86_400_000;
-  return {
-    id,
-    chainId: DEFAULT_CHAIN.id,
-    authorizedAt,
-    quote: {
-      quoteId: `qt_${id.slice(-4).toLowerCase()}`,
-      inputAmount: usdc.toString(),
-      inputDecimals: USDC_DECIMALS,
-      inputAsset: "USDC",
-      fiatCurrency: "NGN",
-      fiatDecimals: NGN_DECIMALS,
-      grossFiat: netFiat.toString(),
-      providerFee: "0",
-      meloFee: "0",
-      netFiat: netFiat.toString(),
-      rateDisplay: "1 USDC = ₦1,582.00",
-      issuedAt: authorizedAt - QUOTE_TTL_MS,
-      expiresAt: authorizedAt,
-      reservation: "INDICATIVE",
-    },
-    recipient: { bankCode: "058", bankName, accountLast4: "4821", accountName: "ADAEZE OKAFOR" },
-    escrowTxHash: `0x${id.slice(4).toLowerCase().padEnd(64, "0")}`,
-    escrowContract: SAMPLE_ESCROW_CONTRACT,
-    providerReference: `prv_${id.slice(-5)}`,
-    correlationId: `corr_${id.slice(-6).toLowerCase()}`,
-    sample: true,
-    projection: { status, payoutStatus: PAYOUT_BY_STATUS[status] ?? "NOT_STARTED", confirmations: 1 },
-  };
+/** The signed-in user's real cash-outs from the MELO backend (`GET /v1/activity`). */
+type ActivitySource = {
+  list(signal?: AbortSignal): Promise<IntentView[]>;
+  get(id: string, signal?: AbortSignal): Promise<IntentView>;
+};
+
+const activityRegistry = globalThis as typeof globalThis & { __meloBackendActivity?: ActivitySource | null };
+
+/** Registered while signed in; activity and tracking then show real cash-outs only. */
+export function setBackendActivitySource(source: ActivitySource | null) {
+  activityRegistry.__meloBackendActivity = source;
 }
 
-const SAMPLE_HISTORY: IntentView[] = [
-  sample("int_01J9YH2B7C", 250_000_000n, 39_210_000n, "SETTLED", 0, "GTBank"),
-  sample("int_01J9XE0R3D", 40_000_000n, 6_270_500n, "REFUNDED", 1, "Access Bank"),
-  sample("int_01J9W81K6F", 75_000_000n, 11_770_000n, "RECONCILIATION_REQUIRED", 7, "OPay"),
-];
+/** Simulated intents use `int_` ids; anything else is a backend deposit id. */
+const isSimulatedId = (id: string) => id.startsWith("int_");
 
 export function createMockApi(): MeloApi {
   return {
@@ -445,22 +423,23 @@ export function createMockApi(): MeloApi {
     },
 
     async getIntent(intentId: string, options?: RequestOptions) {
+      const backend = activityRegistry.__meloBackendActivity;
+      if (backend && !isSimulatedId(intentId)) return backend.get(intentId, options?.signal);
       await delay(120, options?.signal);
-      const found = SAMPLE_HISTORY.find((s) => s.id === intentId);
-      if (found) return found;
       const intent = load().intents[intentId];
       if (!intent?.authorizedAt) throw new ApiError("not-found", "We couldn't find that cash-out.", { status: 404 });
       return toView(intent, Date.now());
     },
 
     async listActivity(options?: RequestOptions) {
+      const backend = activityRegistry.__meloBackendActivity;
+      if (backend) return backend.list(options?.signal);
       await delay(150, options?.signal);
       const now = Date.now();
-      const own = Object.values(load().intents)
+      return Object.values(load().intents)
         .filter((i) => i.authorizedAt)
         .sort((a, b) => (b.authorizedAt ?? 0) - (a.authorizedAt ?? 0))
         .map((i) => toView(i, now));
-      return [...own, ...SAMPLE_HISTORY];
     },
   };
 }

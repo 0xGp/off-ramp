@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { MotionConfig } from "framer-motion";
-import { Activity, ArrowDownUp, ArrowRight, ChevronRight, ListChecks } from "lucide-react";
+import { Activity, ArrowDownUp, ArrowRight, ChevronRight, ListChecks, Wallet } from "lucide-react";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { BentoCard } from "@/components/ui/bento-grid-utils/bento-card";
 import { deserializeQuote, isTerminal } from "@/lib/offramp/model";
@@ -11,6 +11,7 @@ import { useActivity } from "@/lib/api/queries";
 import { FLOW_STEPS } from "./flow-steps";
 import { formatNgn, formatUsdc, primaryButtonClass, StatusPill } from "./primitives";
 import { useNow } from "./use-now";
+import { WalletBalances } from "./wallet-balances";
 
 const relative = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
@@ -37,7 +38,7 @@ function ActivityRow({ record, now }: { record: IntentView; now: number }) {
           </span>
           <span className="block text-xs text-muted-foreground">
             {record.recipient.bankName} · {when(record.authorizedAt, now)}
-            {record.sample ? " · sample" : ""}
+            {record.simulated ? " · simulated" : ""}
           </span>
         </span>
         <span className="flex items-center gap-1">
@@ -53,7 +54,7 @@ export function HomeDashboard() {
   const activity = useActivity();
   const now = useNow();
   const history = activity.data ?? [];
-  const live = history.filter((r) => !r.sample && !isTerminal(r.projection.status));
+  const live = history.filter((r) => !isTerminal(r.projection.status));
   const loading = activity.isPending || now === null;
 
   return (
@@ -77,7 +78,11 @@ export function HomeDashboard() {
           </div>
         </BentoCard>
 
-        <BentoCard title="In progress" description="Cash-outs still settling" icon={<ListChecks className="size-4" />} colSpan={2}>
+        <BentoCard title="Wallet" description="Your MELO wallet's USDC" icon={<Wallet className="size-4" />} colSpan={2}>
+          <WalletBalances />
+        </BentoCard>
+
+        <BentoCard title="In progress" description="Cash-outs still settling" icon={<ListChecks className="size-4" />} colSpan={4}>
           {loading ? (
             <div className="h-14 animate-pulse rounded-xl bg-ink/5 motion-reduce:animate-none" />
           ) : live.length ? (
@@ -96,12 +101,16 @@ export function HomeDashboard() {
           )}
         </BentoCard>
 
-        <BentoCard title="Activity" description="This session plus sample history" icon={<Activity className="size-4" />} colSpan={4}>
+        <BentoCard title="Activity" description="Your cash-outs" icon={<Activity className="size-4" />} colSpan={4}>
           {loading ? (
             <div className="h-40 animate-pulse rounded-xl bg-ink/5 motion-reduce:animate-none" />
           ) : activity.isError ? (
             <p className="rounded-xl bg-muted/60 p-4 text-sm text-muted-foreground">
               Couldn&apos;t load activity. {activity.error.message}
+            </p>
+          ) : history.length === 0 ? (
+            <p className="rounded-xl bg-muted/60 p-4 text-sm text-muted-foreground">
+              No cash-outs yet. Completed and refunded cash-outs show up here.
             </p>
           ) : (
             <ul className="flex flex-col divide-y divide-ink/5">

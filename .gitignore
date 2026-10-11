@@ -2,6 +2,9 @@ node_modules/
 .DS_Store
 *.log
 
+# The pitch video project stays local; the README links the published video.
+video/
+
 # Secrets live in gitignored .env files; examples carry no values.
 .env
 .env.*

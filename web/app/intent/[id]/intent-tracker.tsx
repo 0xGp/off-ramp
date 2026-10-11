@@ -230,7 +230,7 @@ function Tracker({ intent }: { intent: IntentView }) {
   const settled = status === "SETTLED";
   const dispatch = useAppDispatch();
   const receiptSeen = useAppSelector((s) => s.offramp.receiptsSeen.includes(intent.id));
-  const showSuccess = settled && !intent.sample && !receiptSeen;
+  const showSuccess = settled && !receiptSeen;
   const { copied, copy } = useCopy(intent.id);
   const reference = useCopy(`${intent.id} · ${intent.correlationId}`);
   const amount = formatUsdc(quote.inputAmount, quote.inputDecimals);
@@ -285,7 +285,7 @@ function Tracker({ intent }: { intent: IntentView }) {
           </h1>
           <p className="text-sm text-muted-foreground tabular-nums">
             {amount} → {formatNgn(quote.netFiat, quote.fiatDecimals)} to {bank}
-            {intent.sample ? " · sample" : ""}
+            {intent.simulated ? " · simulated" : ""}
           </p>
         </div>
 
@@ -435,9 +435,9 @@ function EscrowDetails({ intent, collapsible }: { intent: IntentView; collapsibl
   const rows = (
     <dl className="divide-y divide-ink/10 border-t border-ink/10 px-4">
       <DetailRow label="Network" value={`${getChain(intent.chainId).name} (${getChain(intent.chainId).id})`} />
-      <DetailRow label="Escrow tx" value={`${shortHex(intent.escrowTxHash)} (simulated)`} mono />
+      <DetailRow label="Escrow tx" value={`${shortHex(intent.escrowTxHash)}${intent.simulated ? " (simulated)" : ""}`} mono />
       <DetailRow label="Confirmations" value={projection.confirmations ? `${projection.confirmations} (final)` : "0"} />
-      <DetailRow label="Contract" value={`${shortHex(intent.escrowContract)} (sample)`} mono />
+      <DetailRow label="Contract" value={`${shortHex(intent.escrowContract)}${intent.simulated ? " (simulated)" : ""}`} mono />
       <DetailRow label="Provider status" value={projection.payoutStatus.replace("_", " ").toLowerCase()} />
       <DetailRow label="Reference" value={intent.providerReference} mono />
       <DetailRow label="Correlation" value={intent.correlationId} mono />

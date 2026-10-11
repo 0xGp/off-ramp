@@ -9,6 +9,7 @@ export type ErrorCode =
   | "quote-expired"
   | "chain-pending"
   | "provider-unavailable"
+  | "rate-limited"
   | "internal";
 
 const STATUS: Record<ErrorCode, number> = {
@@ -21,6 +22,7 @@ const STATUS: Record<ErrorCode, number> = {
   "quote-expired": 409,
   "chain-pending": 409,
   "provider-unavailable": 503,
+  "rate-limited": 429,
   internal: 500,
 };
 

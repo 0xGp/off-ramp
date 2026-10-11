@@ -16,7 +16,20 @@ const runner = await run({
   taskList: createTasks({ payouts: services.payouts, funding: services.funding }),
 });
 
+const startedAt = new Date();
+const beat = () =>
+  db
+    .query(
+      `insert into service_heartbeats (name, pid, started_at, seen_at) values ('worker', $1, $2, now())
+       on conflict (name) do update set pid = excluded.pid, started_at = excluded.started_at, seen_at = now()`,
+      [process.pid, startedAt],
+    )
+    .catch((error: unknown) => console.error("heartbeat failed", error));
+await beat();
+const heartbeat = setInterval(beat, 15_000);
+
 const shutdown = async () => {
+  clearInterval(heartbeat);
   await runner.stop();
   await db.end();
   process.exit(0);

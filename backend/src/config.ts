@@ -14,6 +14,17 @@ const rpcUrls = z
 const schema = z.object({
   DATABASE_URL: z.string().url(),
   PORT: z.coerce.number().int().positive().default(4000),
+  /** `127.0.0.1` behind a local reverse proxy, so the API is only reachable through it. */
+  HOST: z.string().min(1).default("0.0.0.0"),
+  /** Trust X-Forwarded-For/-Proto from the reverse proxy (client IP for rate limits, https for cookies). */
+  TRUST_PROXY: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
+  /** `scrypt$<salt>$<hash>` from scripts/admin-password.ts. Unset disables /v1/admin. */
+  ADMIN_PASSWORD_HASH: z
+    .string()
+    .regex(/^scrypt\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$/, "must come from scripts/admin-password.ts")
+    .optional(),
+  /** Signs admin session cookies; at least 32 random characters. */
+  ADMIN_SESSION_SECRET: z.string().min(32).optional(),
   CORS_ORIGINS: z
     .string()
     .default("http://localhost:3000")
@@ -94,6 +105,9 @@ const schema = z.object({
   ARC_TESTNET_RPC_URL: rpcUrls.default("https://rpc.testnet.arc.io"),
   BASE_SEPOLIA_RPC_URL: rpcUrls.default("https://sepolia.base.org"),
 }).superRefine((c, ctx) => {
+  if (!!c.ADMIN_PASSWORD_HASH !== !!c.ADMIN_SESSION_SECRET) {
+    ctx.addIssue({ code: "custom", path: ["ADMIN_SESSION_SECRET"], message: "set both ADMIN_PASSWORD_HASH and ADMIN_SESSION_SECRET" });
+  }
   if (c.PAYOUT_FUNDING === "on" && (c.PAYOUT_PROVIDER !== "paycrest" || !c.TREASURY_PRIVATE_KEY)) {
     ctx.addIssue({
       code: "custom",

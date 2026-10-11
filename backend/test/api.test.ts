@@ -38,6 +38,10 @@ describe("API", async () => {
     assert.deepEqual((await call("GET", "/healthz")).body, { ok: true });
   });
 
+  it("has no admin routes without a configured admin password", async () => {
+    assert.equal((await call("POST", "/v1/admin/login", { body: { password: "x" } })).status, 404);
+  });
+
   it("rejects requests without a token", async () => {
     const res = await call("GET", "/v1/me");
     assert.equal(res.status, 401);
@@ -281,6 +285,9 @@ describe("API", async () => {
       refundAfter: BigInt(deposit.terms.refundAfter),
     };
 
+    const listed = async () => (await call("GET", "/v1/activity", { token })).body.activity as { id: string }[];
+    assert.ok(!(await listed()).some((a) => a.id === deposit.id), "unfunded deposits aren't activity");
+
     const pending = await confirm(`0x${"1".repeat(64)}`);
     assert.equal(pending.status, 409);
     assert.equal(pending.body.error.code, "chain-pending");
@@ -307,6 +314,14 @@ describe("API", async () => {
     const audit = await t.db.query("select count(*)::int as n from audit_events where kind = 'deposit.escrowed'");
     assert.equal(audit.rows[0].n, 1);
     assert.equal((await call("GET", `/v1/deposits/${deposit.id}`, { token })).body.deposit.status, "escrowed");
+
+    assert.ok((await listed()).some((a) => a.id === deposit.id));
+    const item = (await call("GET", `/v1/activity/${deposit.id}`, { token })).body.activity;
+    assert.equal(item.depositStatus, "escrowed");
+    assert.equal(item.depositTxHash, good);
+    assert.equal(item.quote.id, body.quote.id);
+    const stranger = await t.signer.token({ sub: "did:privy:stranger", iat: nowSec() });
+    assert.equal((await call("GET", `/v1/activity/${deposit.id}`, { token: stranger })).status, 404);
   });
 
   it("treats saving the same account again as a no-op", async () => {

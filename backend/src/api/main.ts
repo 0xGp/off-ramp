@@ -10,6 +10,7 @@ const app = await buildApp({
   ...services,
   corsOrigins: config.CORS_ORIGINS,
   paycrestWebhookSecret: config.PAYCREST_API_SECRET,
+  trustProxy: config.TRUST_PROXY,
 });
 
 const shutdown = async () => {
@@ -20,4 +21,4 @@ const shutdown = async () => {
 process.once("SIGINT", shutdown);
 process.once("SIGTERM", shutdown);
 
-await app.listen({ port: config.PORT, host: "0.0.0.0" });
+await app.listen({ port: config.PORT, host: config.HOST });

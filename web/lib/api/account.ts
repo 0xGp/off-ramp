@@ -6,8 +6,9 @@ import { usePrivy } from "@privy-io/react-auth";
 
 import { formatUnits, parseUnits } from "@/lib/money";
 import { ApiError, isApiErrorCode } from "./errors";
-import { setBackendQuoteSource } from "./mock-api";
-import type { WireQuote } from "./types";
+import type { IntentStatus, PayoutStatus } from "@/lib/offramp/model";
+import { setBackendActivitySource, setBackendQuoteSource } from "./mock-api";
+import type { IntentView, WireQuote } from "./types";
 
 /** MELO backend (backend/). Unset means account features stay off and the flow uses the mock API. */
 export const BACKEND_URL = process.env.NEXT_PUBLIC_MELO_BACKEND_URL?.replace(/\/$/, "");
@@ -157,12 +158,85 @@ export function toWireQuote(q: BackendQuote): WireQuote {
   };
 }
 
-/** While signed in, cash-out quotes come from the backend instead of the in-browser simulation. */
+/** Mirrors the backend's ActivityView: a cash-out whose USDC reached the escrow. */
+interface BackendActivity {
+  id: string;
+  chainId: number;
+  escrow: string;
+  depositStatus: "escrowed" | "released" | "refunded";
+  depositTxHash: string;
+  escrowedAt: string;
+  quote: BackendQuote;
+  payout: { status: "pending" | "succeeded" | "failed"; providerOrderId: string; fiatMinor: string; settleTxHash: string | null } | null;
+}
+
+function activityStatus(a: BackendActivity): IntentStatus {
+  if (a.depositStatus === "released") return "SETTLED";
+  if (a.depositStatus === "refunded") return "REFUNDED";
+  switch (a.payout?.status) {
+    case "pending":
+      return "FIAT_PAYMENT_PENDING";
+    case "succeeded":
+      return "RELEASE_PENDING";
+    case "failed":
+      return "REFUND_PENDING";
+    default:
+      return "ESCROWED";
+  }
+}
+
+const PAYOUT_STATUS = { pending: "PENDING", succeeded: "SUCCEEDED", failed: "FAILED" } as const satisfies Record<
+  string,
+  PayoutStatus
+>;
+
+function toIntentView(a: BackendActivity): IntentView {
+  const quote = toWireQuote(a.quote);
+  return {
+    id: a.id,
+    chainId: a.chainId,
+    authorizedAt: Date.parse(a.escrowedAt),
+    // The Paycrest order's naira amount is what was actually sent; the quote's is indicative.
+    quote: a.payout ? { ...quote, netFiat: a.payout.fiatMinor } : quote,
+    recipient: {
+      bankCode: "",
+      bankName: a.quote.payTo.institutionName,
+      accountLast4: a.quote.payTo.accountLast4,
+      accountName: a.quote.payTo.accountName,
+    },
+    escrowTxHash: a.depositTxHash,
+    escrowContract: a.escrow,
+    providerReference: a.payout?.providerOrderId ?? "—",
+    correlationId: a.id,
+    simulated: false,
+    projection: {
+      status: activityStatus(a),
+      payoutStatus: a.payout ? PAYOUT_STATUS[a.payout.status] : "NOT_STARTED",
+      confirmations: 1,
+    },
+  };
+}
+
+/** While signed in, quotes and activity come from the backend instead of the in-browser simulation. */
 export function useBackendQuotes() {
   const { ready, authenticated, getAccessToken } = usePrivy();
   const enabled = !!BACKEND_URL && ready && authenticated;
   useEffect(() => {
     if (!enabled) return;
+    const get = async <T,>(path: string, signal?: AbortSignal) => {
+      const token = await getAccessToken();
+      if (!token) throw new ApiError("validation", "Sign in again to continue.", { status: 401 });
+      try {
+        return await backendFetch<T>(path, token, { signal });
+      } catch (error) {
+        throw error instanceof BackendError ? toFlowApiError(error) : error;
+      }
+    };
+    setBackendActivitySource({
+      list: async (signal) => (await get<{ activity: BackendActivity[] }>("/v1/activity", signal)).activity.map(toIntentView),
+      get: async (id, signal) =>
+        toIntentView((await get<{ activity: BackendActivity }>(`/v1/activity/${encodeURIComponent(id)}`, signal)).activity),
+    });
     setBackendQuoteSource(async ({ chainId, amount }, signal) => {
       const token = await getAccessToken();
       if (!token) throw new ApiError("validation", "Sign in again to get a quote.", { status: 401 });
@@ -177,7 +251,10 @@ export function useBackendQuotes() {
         throw error instanceof BackendError ? toFlowApiError(error) : error;
       }
     });
-    return () => setBackendQuoteSource(null);
+    return () => {
+      setBackendQuoteSource(null);
+      setBackendActivitySource(null);
+    };
   }, [enabled, getAccessToken]);
 }
 

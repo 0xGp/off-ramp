@@ -96,6 +96,7 @@ export class RpcTreasuryFunder implements TreasuryFunder {
         await this.#client.getTransaction({ hash });
         return { status: "pending" };
       } catch {
+        
         return { status: "unknown" };
       }
     }

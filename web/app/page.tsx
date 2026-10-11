@@ -2,6 +2,7 @@ import Link from "next/link";
 import { HomeDashboard } from "@/components/offramp/home-dashboard";
 import ConnectButton from "@/components/connect-button";
 import { MeloMark } from "@/components/landing/melo-mark";
+import { IS_MAINNET } from "@/lib/chains";
 
 export default function Home() {
   return (
@@ -12,7 +13,7 @@ export default function Home() {
             <MeloMark className="size-8" />
             <span className="font-display text-lg font-extrabold tracking-[-0.03em] text-ink">MELO</span>
             <span className="hidden rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-teal-ink sm:inline">
-              Arc testnet
+              {IS_MAINNET ? "Arc mainnet" : "Arc testnet"}
             </span>
           </Link>
           <ConnectButton />

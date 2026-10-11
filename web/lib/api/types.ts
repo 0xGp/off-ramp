@@ -85,8 +85,8 @@ export interface IntentView {
   escrowContract: string;
   providerReference: string;
   correlationId: string;
-  /** Sample history rows are fixtures, not the user's own cash-outs. */
-  sample: boolean;
+  /** In-browser simulation (signed out); real cash-outs come from the MELO backend. */
+  simulated: boolean;
   projection: IntentProjection;
 }
 

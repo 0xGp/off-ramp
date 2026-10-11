@@ -6,7 +6,7 @@ import { BACKEND_URL, useMe } from "@/lib/api/account";
 import { useWallet } from "@/lib/use-wallet";
 
 /** Pages a signed-in user can see before finishing account setup. */
-const OPEN_PATHS = ["/account/setup", "/landing"];
+const OPEN_PATHS = ["/account/setup", "/landing", "/admin"];
 
 /** Right after sign-in, account setup comes first: until it's complete, every other page redirects to it. */
 export function OnboardingGate() {

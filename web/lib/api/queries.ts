@@ -40,6 +40,6 @@ export function useActivity() {
     queryKey: queryKeys.activity,
     queryFn: ({ signal }) => api.listActivity({ signal }),
     refetchInterval: (query) =>
-      query.state.data?.some((i) => !i.sample && !isTerminal(i.projection.status)) ? POLL_MS * 2 : false,
+      query.state.data?.some((i) => !isTerminal(i.projection.status)) ? POLL_MS * 2 : false,
   });
 }

@@ -1,5 +1,9 @@
 import { runMigrations } from "graphile-worker";
 
+import { ActivityService } from "./activity/service.ts";
+import { AdminAuth } from "./admin/auth.ts";
+import { OnchainBalances } from "./admin/balances.ts";
+import { AdminService } from "./admin/service.ts";
 import { PrivyProfileLookup, PrivyTokenVerifier } from "./auth/privy.ts";
 import { BankAccountService } from "./bank-accounts/service.ts";
 import { QuoteSigner, RpcDepositReader, RpcEscrowSettler } from "./chain/escrow.ts";
@@ -8,7 +12,7 @@ import { PayoutFunding } from "./payouts/funding.ts";
 import { PaycrestPayoutProvider } from "./payouts/paycrest.ts";
 import { SimulatedPayoutProvider } from "./payouts/provider.ts";
 import { PayoutService } from "./payouts/service.ts";
-import { ARC_MAINNET, ARC_TESTNET, BASE_SEPOLIA } from "./chains.ts";
+import { ARC_MAINNET, ARC_TESTNET, BASE_SEPOLIA, DEPOSIT_CHAINS } from "./chains.ts";
 import { DepositService } from "./deposits/service.ts";
 import type { Config } from "./config.ts";
 import { migrate } from "./db/migrate.ts";
@@ -46,34 +50,57 @@ export function createServices(config: Config, db: Db = createPool(config.DATABA
           refundAddress: (config.PAYCREST_REFUND_ADDRESS ?? config.ESCROW_PAYEE_ADDRESS)!,
         })
       : new SimulatedPayoutProvider({ delaySeconds: config.SIM_PAYOUT_SECONDS, outcome: config.SIM_PAYOUT_OUTCOME });
+  const treasury = config.TREASURY_PRIVATE_KEY
+    ? new RpcTreasuryFunder(config.TREASURY_PRIVATE_KEY as `0x${string}`, config.BASE_RPC_URL)
+    : null;
   const funding =
-    config.PAYOUT_FUNDING === "on" && config.TREASURY_PRIVATE_KEY
-      ? new PayoutFunding(
-          db,
-          new RpcTreasuryFunder(config.TREASURY_PRIVATE_KEY as `0x${string}`, config.BASE_RPC_URL),
-          parseUnits(config.PAYOUT_FUNDING_MAX_USDC, USDC_DECIMALS)!,
-        )
+    config.PAYOUT_FUNDING === "on" && treasury
+      ? new PayoutFunding(db, treasury, parseUnits(config.PAYOUT_FUNDING_MAX_USDC, USDC_DECIMALS)!)
       : null;
+  const settler = config.ATTESTOR_PRIVATE_KEY
+    ? new RpcEscrowSettler(config.ATTESTOR_PRIVATE_KEY as `0x${string}`, rpcUrls)
+    : null;
+  const admin =
+    config.ADMIN_PASSWORD_HASH && config.ADMIN_SESSION_SECRET
+      ? {
+          auth: new AdminAuth(config.ADMIN_PASSWORD_HASH, config.ADMIN_SESSION_SECRET),
+          service: new AdminService(
+            db,
+            new OnchainBalances({
+              treasury,
+              fundingCapUsdc: funding ? config.PAYOUT_FUNDING_MAX_USDC : null,
+              attestor: settler?.address ?? null,
+              chains: Object.values(DEPOSIT_CHAINS).map((chain) => ({
+                chain,
+                rpcUrls: rpcUrls[chain.id as keyof typeof rpcUrls],
+              })),
+            }),
+          ),
+        }
+      : null;
+  const quotes = new QuoteService(db, directory, bankAccounts, {
+    ttlSeconds: config.QUOTE_TTL_SECONDS,
+    feeBps: config.MELO_FEE_BPS,
+    minUnits: parseUnits(config.QUOTE_MIN_USDC, USDC_DECIMALS)!,
+    maxUnits: parseUnits(config.QUOTE_MAX_USDC, USDC_DECIMALS)!,
+  });
   return {
     db,
     directory,
+    activity: new ActivityService(db, quotes),
+    admin,
     funding,
     payouts: new PayoutService(
       db,
       payoutProvider,
-      config.ATTESTOR_PRIVATE_KEY ? new RpcEscrowSettler(config.ATTESTOR_PRIVATE_KEY as `0x${string}`, rpcUrls) : null,
+      settler,
       undefined,
       payoutProvider.name === "paycrest" ? cipher : null,
     ),
     verifier: new PrivyTokenVerifier(config.PRIVY_APP_ID, config.PRIVY_VERIFICATION_KEY),
     users: new UserService(db, profiles),
     bankAccounts,
-    quotes: new QuoteService(db, directory, bankAccounts, {
-      ttlSeconds: config.QUOTE_TTL_SECONDS,
-      feeBps: config.MELO_FEE_BPS,
-      minUnits: parseUnits(config.QUOTE_MIN_USDC, USDC_DECIMALS)!,
-      maxUnits: parseUnits(config.QUOTE_MAX_USDC, USDC_DECIMALS)!,
-    }),
+    quotes,
     deposits: new DepositService(
       db,
       config.QUOTE_SIGNER_PRIVATE_KEY ? new QuoteSigner(config.QUOTE_SIGNER_PRIVATE_KEY as `0x${string}`) : null,
